@@ -4,12 +4,11 @@
 - 001~003 실행 준비가 끝난 상태. 키 없이 확인하려면 `.env`에 `SPEC_WRITER=fake`(가짜 AI가 spec 생성과 충돌 검사 모두를 대신한다)
 - 실제 Claude로 확인하려면 `ANTHROPIC_API_KEY`(저장소에 커밋하지 않는다), 선택으로 `CONFLICT_MODEL`
 
-## 실행 (구현 후)
-1. `npm run db:migrate` — `ConflictCheck`, `ConflictWarning` 추가
-2. `npm run dev` → 시드 계정(관리자·멤버·열람자)으로 확인
-3. 테스트: `npm test`(가짜 AI + 실제 PostgreSQL), `npm run test:e2e`, 실제 Claude 평가 `npm run test:live`(키 필요, 비용 발생, SC-009 탐지율·오탐률 출력)
-
-구체 명령은 구현 단계에서 `package.json`과 이 문서에 반영한다.
+## 실행
+1. `npm run db:migrate` — `ConflictCheck`, `ConflictWarning` 추가 (적용 전 `pg_dump` 백업 권장)
+2. `.env`에 `SPEC_WRITER=fake`(가짜 AI가 spec 생성과 충돌 검사를 모두 대신한다: 입력에 "두 장·불가·제한·허용하지" 같은 표식이 있고 항목과 어절이 겹치면 경고). 실제 Claude는 `SPEC_WRITER=claude`와 `ANTHROPIC_API_KEY`, 선택으로 `CONFLICT_MODEL`
+3. `npm run dev` → 멤버로 입력을 제출하고 관리자로 승인 대기 화면에서 확인
+4. 테스트: `npm test`(가짜 AI + 실제 PostgreSQL), `npm run test:e2e`(실행 전에 이전 E2E가 남긴 데이터를 정리한다), 실제 Claude 평가 `npm run test:live`(키가 있을 때만, 비용 발생. 탐지율·오탐률·호출 p95를 출력)
 
 ## 검증 시나리오
 
@@ -41,3 +40,21 @@
 | 24 | 실제 Claude 평가 세트 | 모순 입력 80% 이상 경고, 모순 없는 입력 오탐 20% 이하 | SC-009 |
 
 계약 상세: [contracts/openapi.yaml](contracts/openapi.yaml), 데이터 규칙: [data-model.md](data-model.md)
+
+## 자동화 매핑
+
+| 시나리오 | 검증하는 테스트 |
+|---|---|
+| 1~5, 10, 21 | `conflict-checks.test.ts`, `conflict-view.test.ts`, `conflict-nonblocking.test.ts`, `conflict-warnings.spec.ts` |
+| 6~9 | `validate-conflicts.test.ts`, `conflict-validation.test.ts` |
+| 11~13 | `conflict-failure.test.ts`, `conflict-retry.test.ts`, `conflict-retry.spec.ts` |
+| 14 | `conflict-skip.test.ts` |
+| 15 | `conflict-checks.test.ts` |
+| 16, 20 | `conflict-acknowledge.test.ts`, `conflict-acknowledge.spec.ts` |
+| 17 | `conflict-processed.test.ts`, `conflict-processed.spec.ts` |
+| 18 | `conflict-midflight.test.ts` |
+| 19 | `conflict-visibility.test.ts` + 각 E2E의 멤버·열람자 확인 |
+| 22 | `conflict-checks.test.ts` |
+| 23 | `a11y-conflicts.spec.ts` |
+| 24 | `tests/live/conflict-detector.live.test.ts` (키 필요) |
+| 성능 | `latency-v4.test.ts` |

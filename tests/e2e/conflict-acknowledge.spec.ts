@@ -26,7 +26,7 @@ test("경고 확인: 한 번 클릭으로 접힌 '확인됨', 확인자·시각,
   const text = `쿠폰은 두 장까지 중복 적용을 허용하자. ${stamp}`;
   await submitInput(member, text);
 
-  await admin.goto(`/boards/${ids[1]}/pending`);
+  await admin.goto(`/boards/${ids[1]}/pending?feature=${ids[2]}`);
   const card = admin.locator("article.input-card", { hasText: text });
   await expect(card.getByText("충돌 가능성", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
   await expect(admin.getByText(/아직 확인하지 않은 경고 \d+개/)).toBeVisible();

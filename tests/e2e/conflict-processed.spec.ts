@@ -29,7 +29,7 @@ test("처리된 입력의 경고는 이력으로 남고 관리자 입력 화면�
   await submitInput(member, toApprove);
   await submitInput(member, toReject);
 
-  await admin.goto(`/boards/${ids[1]}/pending`);
+  await admin.goto(`/boards/${ids[1]}/pending?feature=${ids[2]}`);
   const a = admin.locator("article.input-card", { hasText: toApprove });
   const r = admin.locator("article.input-card", { hasText: toReject });
   await expect(a.getByText("충돌 가능성", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
