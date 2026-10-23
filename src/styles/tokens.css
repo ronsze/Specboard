@@ -1,0 +1,71 @@
+/* 디자인 토큰: docs/Specboard-selection.pdf 3쪽. 다크는 같은 이름의 변수만 덮어쓴다. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --ink: #15171c;
+  --ink-3: #5c6371;
+  --src: #1d5bd0; /* 출처·링크 */
+  --q: #9a4700; /* 미결 질문 */
+  --ai: #5b3fc4; /* AI 정리 */
+  --line: #dce0e6;
+  --ok: #16683b;
+  --wait: #6e5600;
+  --no: #b3261e;
+  --auto: #0d5f6e;
+
+  /* 색 위에 깔리는 옅은 배경 (같은 색을 표면에 섞은 것) */
+  --src-bg: color-mix(in srgb, var(--src) 10%, var(--surface));
+  --q-bg: color-mix(in srgb, var(--q) 9%, var(--surface));
+  --ai-bg: color-mix(in srgb, var(--ai) 10%, var(--surface));
+  --ok-bg: color-mix(in srgb, var(--ok) 11%, var(--surface));
+  --wait-bg: color-mix(in srgb, var(--wait) 13%, var(--surface));
+  --no-bg: color-mix(in srgb, var(--no) 10%, var(--surface));
+  --auto-bg: color-mix(in srgb, var(--auto) 11%, var(--surface));
+  --mute-bg: color-mix(in srgb, var(--ink) 6%, var(--surface));
+  --highlight: color-mix(in srgb, #f2c94c 38%, var(--surface));
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  --r-badge: 6px;
+  --r-button: 8px;
+  --r-card: 12px;
+  --r-pill: 999px;
+
+  --font-sans: var(--font-plex-sans-kr), "IBM Plex Sans KR", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --fs-display: 28px;
+  --fs-h2: 18px;
+  --fs-item: 16px;
+  --fs-body: 15px;
+  --fs-small: 13px;
+  --fs-meta: 12px;
+
+  --shadow-dialog: 0 12px 40px rgba(0, 0, 0, 0.25);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111317;
+    --surface: #1a1d23;
+    --ink: #eceef2;
+    --ink-3: #9ea5b2;
+    --src: #8db4ff;
+    --q: #ffb46b;
+    --ai: #c2b2ff;
+    --line: #2e333c;
+    --ok: #7fd6a1;
+    --wait: #f2d36b;
+    --no: #ff9a92;
+    --auto: #7fd3e0;
+    --highlight: color-mix(in srgb, #f2c94c 30%, var(--surface));
+    --shadow-dialog: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+}

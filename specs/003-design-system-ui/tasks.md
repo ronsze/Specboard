@@ -65,24 +65,24 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 8
 
-- [ ] T017 [P] [US8] `tests/e2e/helpers/a11y.ts`에 `expectNoA11yViolations(page)`(axe, color-contrast 포함)와 `forEachColorScheme(page, fn)`(`page.emulateMedia({ colorScheme })`로 라이트·다크 순회)을 만든다
-- [ ] T018 [P] [US8] `tests/e2e/ui-kit.spec.ts`에 컴포넌트 모음 페이지(`/dev/ui-kit`, 개발·테스트 전용)에 대해 라이트·다크 axe 위반 0건, 모든 배지가 아이콘/기호와 글자를 함께 가짐, `<dialog>`가 Esc로 닫히고 열린 동안 포커스가 밖으로 나가지 않으며 기본 포커스가 취소 버튼에 있음을 검증한다 (SC-001~SC-003)
+- [X] T017 [P] [US8] `tests/e2e/helpers/a11y.ts`에 `expectNoA11yViolations(page)`(axe, color-contrast 포함)와 `forEachColorScheme(page, fn)`(`page.emulateMedia({ colorScheme })`로 라이트·다크 순회)을 만든다
+- [X] T018 [P] [US8] `tests/e2e/ui-kit.spec.ts`에 컴포넌트 모음 페이지(`/dev/ui-kit`, 개발·테스트 전용)에 대해 라이트·다크 axe 위반 0건, 모든 배지가 아이콘/기호와 글자를 함께 가짐, `<dialog>`가 Esc로 닫히고 열린 동안 포커스가 밖으로 나가지 않으며 기본 포커스가 취소 버튼에 있음을 검증한다 (SC-001~SC-003)
 
 ### Implementation for User Story 8
 
-- [ ] T019 [P] [US8] `src/styles/tokens.css`에 research.md의 토큰을 CSS 변수로 정의한다: 라이트(`--bg, --surface, --ink, --ink-3, --src, --q, --ai, --line, --ok, --wait, --no, --auto`)와 `@media (prefers-color-scheme: dark)`의 같은 이름 덮어쓰기, 간격 `--s-1..--s-7`(4·8·12·16·24·32·48), 모서리(배지 6·버튼 8·카드 12·출처 칩 full), 타이포 스케일(display 28/1.3·700, h2 18/1.4·600, item 16/1.65, body 15/1.7, small 13/1.6, meta mono 12)
-- [ ] T020 [P] [US8] `src/styles/base.css`에 리셋, 본문 타이포(`word-break: keep-all`), 보이는 포커스 링(라이트·다크 모두 대비 3:1 이상), 링크·버튼 기본, `prefers-reduced-motion` 처리를 작성한다
-- [ ] T021 [US8] `src/app/layout.tsx`에서 `next/font/google`로 IBM Plex Sans KR(본문)과 IBM Plex Mono(번호·시각·ID)를 `display: swap`과 시스템 글꼴 대체 스택으로 설정하고 `tokens.css`·`base.css`·`components.css`를 불러온다. 기존 `globals.css`는 새 스타일로 대체한다(단계적으로 제거)
-- [ ] T022 [P] [US8] `src/components/ui/Icon.tsx`에 인라인 SVG 아이콘 약 15개(시계, 체크, 엑스, 경고, 자물쇠, 문서, 물음표, 비교, 되돌리기, 펼침 화살표, 사람, 눈, 닫기, 화살표, 새로고침)를 만든다. 장식용은 `aria-hidden`, 의미를 가진 것은 글자를 함께 둔다
-- [ ] T023 [P] [US8] `src/components/ui/Badge.tsx`에 변형(입력 상태, spec 반영, spec 상태, 항목 종류, 입력 종류, 역할, 버전 방식)을 만든다. 모든 변형은 아이콘 또는 기호와 글자를 가진다
-- [ ] T024 [P] [US8] `src/components/ui/Button.tsx`(주, 보조, 위험, 텍스트), `Card.tsx`, `EmptyState.tsx`, `Tabs.tsx`(링크 기반, `aria-current`), `Banner.tsx`(정보·경고·오류)를 만든다
-- [ ] T025 [US8] `src/components/ui/Dialog.tsx`에 네이티브 `<dialog>` + `showModal()` 기반 확인 창을 만든다: 취소 버튼 `autofocus`, Esc 닫기, 닫힐 때 호출한 요소로 포커스 복귀, 제목·설명 `aria-labelledby/aria-describedby`
-- [ ] T026 [US8] `src/styles/components.css`에 위 컴포넌트와 시안의 카드·입력 필드·버튼·비교 행·출처 패널·질문 카드의 클래스를 작성한다(색은 토큰만 사용, 상태 색은 의미 용도로만)
-- [ ] T027 [P] [US8] `src/app/dev/ui-kit/page.tsx`에 모든 컴포넌트와 상태를 한 화면에 모은 개발 전용 페이지를 만든다(`NODE_ENV === "production"`이면 404)
-- [ ] T028 [US8] `src/components/layout/AppHeader.tsx`에 상단 내비를 만든다: 로고, 브레드크럼 자리, (관리자만) "승인 대기 N" 배지와 "멤버 관리", 사용자 이름, 내 역할 배지, 로그아웃. 권한이 없는 항목은 렌더링하지 않는다 (FR-006, FR-007)
-- [ ] T029 [US8] `src/components/layout/Breadcrumb.tsx`에 보드 › 프로젝트 › feature 경로와 각 단계의 전환 메뉴(`<details>`, 키보드 조작 가능)를 만든다
-- [ ] T030 [US8] `src/app/boards/[boardId]/layout.tsx`와 `src/app/boards/[boardId]/features/[featureId]/layout.tsx`에서 헤더 데이터(내 역할, 관리자일 때 대기 수)와 feature 탭(Spec / 입력 N / 버전 이력, 기존 URL 유지)을 제공한다. 탭의 "입력 N" 개수는 T047, 헤더의 승인 대기 수는 T058에서 실제 값으로 연결하며, 그 전에는 숫자를 숨긴다
-- [ ] T031 [P] [US8] `src/app/not-found.tsx`와 `src/components/ui/ForbiddenView.tsx`에 시안의 404, 403 화면(현재 내 역할 표시, "홈으로"/"내 보드로")을 만든다. 404는 접근 권한이 없는 보드의 존재 여부를 드러내지 않는다 (FR-036)
+- [X] T019 [P] [US8] `src/styles/tokens.css`에 research.md의 토큰을 CSS 변수로 정의한다: 라이트(`--bg, --surface, --ink, --ink-3, --src, --q, --ai, --line, --ok, --wait, --no, --auto`)와 `@media (prefers-color-scheme: dark)`의 같은 이름 덮어쓰기, 간격 `--s-1..--s-7`(4·8·12·16·24·32·48), 모서리(배지 6·버튼 8·카드 12·출처 칩 full), 타이포 스케일(display 28/1.3·700, h2 18/1.4·600, item 16/1.65, body 15/1.7, small 13/1.6, meta mono 12)
+- [X] T020 [P] [US8] `src/styles/base.css`에 리셋, 본문 타이포(`word-break: keep-all`), 보이는 포커스 링(라이트·다크 모두 대비 3:1 이상), 링크·버튼 기본, `prefers-reduced-motion` 처리를 작성한다
+- [X] T021 [US8] `src/app/layout.tsx`에서 `next/font/google`로 IBM Plex Sans KR(본문)과 IBM Plex Mono(번호·시각·ID)를 `display: swap`과 시스템 글꼴 대체 스택으로 설정하고 `tokens.css`·`base.css`·`components.css`를 불러온다. 기존 `globals.css`는 새 스타일로 대체한다(단계적으로 제거)
+- [X] T022 [P] [US8] `src/components/ui/Icon.tsx`에 인라인 SVG 아이콘 약 15개(시계, 체크, 엑스, 경고, 자물쇠, 문서, 물음표, 비교, 되돌리기, 펼침 화살표, 사람, 눈, 닫기, 화살표, 새로고침)를 만든다. 장식용은 `aria-hidden`, 의미를 가진 것은 글자를 함께 둔다
+- [X] T023 [P] [US8] `src/components/ui/Badge.tsx`에 변형(입력 상태, spec 반영, spec 상태, 항목 종류, 입력 종류, 역할, 버전 방식)을 만든다. 모든 변형은 아이콘 또는 기호와 글자를 가진다
+- [X] T024 [P] [US8] `src/components/ui/Button.tsx`(주, 보조, 위험, 텍스트), `Card.tsx`, `EmptyState.tsx`, `Tabs.tsx`(링크 기반, `aria-current`), `Banner.tsx`(정보·경고·오류)를 만든다
+- [X] T025 [US8] `src/components/ui/Dialog.tsx`에 네이티브 `<dialog>` + `showModal()` 기반 확인 창을 만든다: 취소 버튼 `autofocus`, Esc 닫기, 닫힐 때 호출한 요소로 포커스 복귀, 제목·설명 `aria-labelledby/aria-describedby`
+- [X] T026 [US8] `src/styles/components.css`에 위 컴포넌트와 시안의 카드·입력 필드·버튼·비교 행·출처 패널·질문 카드의 클래스를 작성한다(색은 토큰만 사용, 상태 색은 의미 용도로만)
+- [X] T027 [P] [US8] `src/app/dev/ui-kit/page.tsx`에 모든 컴포넌트와 상태를 한 화면에 모은 개발 전용 페이지를 만든다(`NODE_ENV === "production"`이면 404)
+- [X] T028 [US8] `src/components/layout/AppHeader.tsx`에 상단 내비를 만든다: 로고, 브레드크럼 자리, (관리자만) "승인 대기 N" 배지와 "멤버 관리", 사용자 이름, 내 역할 배지, 로그아웃. 권한이 없는 항목은 렌더링하지 않는다 (FR-006, FR-007)
+- [X] T029 [US8] `src/components/layout/Breadcrumb.tsx`에 보드 › 프로젝트 › feature 경로와 각 단계의 전환 메뉴(`<details>`, 키보드 조작 가능)를 만든다
+- [X] T030 [US8] `src/app/boards/[boardId]/layout.tsx`와 `src/app/boards/[boardId]/features/[featureId]/layout.tsx`에서 헤더 데이터(내 역할, 관리자일 때 대기 수)와 feature 탭(Spec / 입력 N / 버전 이력, 기존 URL 유지)을 제공한다. 탭의 "입력 N" 개수는 T047, 헤더의 승인 대기 수는 T058에서 실제 값으로 연결하며, 그 전에는 숫자를 숨긴다
+- [X] T031 [P] [US8] `src/app/not-found.tsx`와 `src/components/ui/ForbiddenView.tsx`에 시안의 404, 403 화면(현재 내 역할 표시, "홈으로"/"내 보드로")을 만든다. 404는 접근 권한이 없는 보드의 존재 여부를 드러내지 않는다 (FR-036)
 
 **Checkpoint**: 토큰, 공용 컴포넌트, 헤더, 접근성 점검 도구가 갖춰짐
 
