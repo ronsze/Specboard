@@ -394,7 +394,7 @@
   font-size: var(--fs-h2);
 }
 .empty__code {
-  color: var(--line);
+  color: var(--ink-3);
   font-family: var(--font-mono);
   font-size: 48px;
   font-weight: 700;

@@ -250,13 +250,13 @@ description: "디자인 시안 적용 구현 태스크"
 
 ## Phase 11: Polish & Cross-Cutting
 
-- [ ] T095 [P] `tests/e2e/a11y-all-screens.spec.ts`에 모든 화면(로그인, 홈, 입력, 승인 대기, 멤버 관리, spec, 이력, 403, 404, 빈·오류 상태)을 라이트·다크로 axe 점검해 위반 0건임을 확인한다(color-contrast 포함) (SC-001, SC-003)
-- [ ] T096 [P] `tests/e2e/keyboard.spec.ts`에 키보드만으로 제출, 승인, 반려, 출처 펼침, 필터, 비교 선택, 되돌리기, 확정·해제를 수행하는 시나리오와 확인 창의 포커스 가둠·Esc 닫기를 작성한다 (SC-002)
-- [ ] T097 [P] `tests/e2e/responsive.spec.ts`에 휴대폰 너비(375px)에서 spec 보기와 입력 제출 화면에 가로 스크롤이 없고 질문이 항목 위에 있음을 확인한다 (시나리오 24, SC-010)
-- [ ] T098 [P] `tests/integration/api-authz-v3.test.ts`에 새 API 전부(`/home`, `/pending`, `/pending/count`, `inputs/view`, `revert-preview`)의 권한 매트릭스(data-model.md)와 서비스 함수의 `requireRole` 통과를 점검한다 (FR-007, SC-008)
-- [ ] T099 [P] `tests/integration/latency-v3.test.ts`에 홈 요약, 보드 승인 대기, 입력 뷰, 되돌리기 미리보기의 서버 처리 p95가 300ms 이내인지 확인한다(보드 입력 1,000개, feature 20개 규모)
-- [ ] T100 [P] 남은 구 스타일(`src/app/globals.css`)과 사용되지 않는 구 컴포넌트를 제거하고 `npx eslint .`, `npx tsc --noEmit`, `npx next build`가 통과함을 확인한다(글꼴 내려받기에 네트워크가 필요하므로 오프라인이면 시스템 글꼴 대체로 빌드가 계속되는지도 확인하고 결과를 quickstart에 기록)
-- [ ] T101 [P] `specs/003-design-system-ui/quickstart.md`의 "실행" 절을 실제 스크립트 명령으로 갱신한다(`db:verify-numbering`, axe 포함 E2E)
+- [X] T095 [P] `tests/e2e/a11y-all-screens.spec.ts`에 모든 화면(로그인, 홈, 입력, 승인 대기, 멤버 관리, spec, 이력, 403, 404, 빈·오류 상태)을 라이트·다크로 axe 점검해 위반 0건임을 확인한다(color-contrast 포함) (SC-001, SC-003)
+- [X] T096 [P] `tests/e2e/keyboard.spec.ts`에 키보드만으로 제출, 승인, 반려, 출처 펼침, 필터, 비교 선택, 되돌리기, 확정·해제를 수행하는 시나리오와 확인 창의 포커스 가둠·Esc 닫기를 작성한다 (SC-002)
+- [X] T097 [P] `tests/e2e/responsive.spec.ts`에 휴대폰 너비(375px)에서 spec 보기와 입력 제출 화면에 가로 스크롤이 없고 질문이 항목 위에 있음을 확인한다 (시나리오 24, SC-010)
+- [X] T098 [P] `tests/integration/api-authz-v3.test.ts`에 새 API 전부(`/home`, `/pending`, `/pending/count`, `inputs/view`, `revert-preview`)의 권한 매트릭스(data-model.md)와 서비스 함수의 `requireRole` 통과를 점검한다 (FR-007, SC-008)
+- [X] T099 [P] `tests/integration/latency-v3.test.ts`에 홈 요약, 보드 승인 대기, 입력 뷰, 되돌리기 미리보기의 서버 처리 p95가 300ms 이내인지 확인한다(보드 입력 1,000개, feature 20개 규모)
+- [X] T100 [P] 남은 구 스타일(`src/app/globals.css`)과 사용되지 않는 구 컴포넌트를 제거하고 `npx eslint .`, `npx tsc --noEmit`, `npx next build`가 통과함을 확인한다(글꼴 내려받기에 네트워크가 필요하므로 오프라인이면 시스템 글꼴 대체로 빌드가 계속되는지도 확인하고 결과를 quickstart에 기록)
+- [X] T101 [P] `specs/003-design-system-ui/quickstart.md`의 "실행" 절을 실제 스크립트 명령으로 갱신한다(`db:verify-numbering`, axe 포함 E2E)
 - [ ] T102 `design-parity.md`의 모든 항목을 시안 PDF와 화면을 나란히 열어 직접 확인하고 체크한다. 범위 밖으로 명시한 요소가 들어가지 않았는지도 확인한다 (SC-011)
 - [ ] T103 quickstart.md 시나리오 1~25를 처음부터 끝까지 수행해 결과를 확인한다(실제 Claude 발췌 확인은 키가 있을 때 T088과 함께)
 

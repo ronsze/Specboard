@@ -5,11 +5,14 @@
 - 개발 DB에 001·002로 쌓인 데이터가 있으면 backfill 검증에 그대로 쓴다
 - 키 없이 확인하려면 `.env`에 `SPEC_WRITER=fake`
 
-## 실행 (구현 후)
-구체 명령은 구현 단계에서 `package.json`과 이 문서에 반영한다.
-1. `npm run db:migrate` — 번호·인용 컬럼 추가와 backfill 적용
-2. `npm run dev` 후 시드 계정으로 로그인
-3. `npm test`(서비스·단위·통합), `npm run test:e2e`(화면 흐름, 키보드, axe 접근성, 라이트·다크)
+## 실행
+1. `npm run db:migrate` — 번호·인용 컬럼 추가와 기존 데이터 번호 부여(backfill). 개발 DB에 적용하기 전에 `pg_dump`로 백업하는 것을 권장한다
+2. `npm run db:verify-numbering` — 입력·항목·질문 번호의 중복·누락·카운터 불일치를 점검하고 종류가 바뀐 key 수를 보고한다
+3. `npm run dev` 후 시드 계정으로 로그인 (`admin@specboard.local`, `member@specboard.local`, `viewer@specboard.local`, 비밀번호 `specboard123`). 키 없이 AI 동작을 보려면 `.env`에 `SPEC_WRITER=fake`
+4. 테스트: `npm test`(단위·통합, 실제 PostgreSQL), `npm run test:e2e`(화면 흐름, 키보드, 반응형, axe 접근성 라이트·다크), 실제 Claude 점검 `npm run test:live`(키가 있을 때만, 비용 발생)
+5. 개발 전용 UI 키트: http://localhost:3000/dev/ui-kit (프로덕션에서는 404)
+
+글꼴(IBM Plex)은 `next/font/google`이 빌드·개발 중 내려받는다. 네트워크가 없으면 시스템 글꼴로 대체되어 표시된다.
 
 ## 검증 시나리오
 
@@ -42,3 +45,24 @@
 | 25 | 시안 대조 | `design-parity.md` 점검표 전 항목 확인 | SC-011 |
 
 계약 상세: [contracts/openapi.yaml](contracts/openapi.yaml), 데이터 규칙: [data-model.md](data-model.md), 시안 대조: [design-parity.md](design-parity.md)
+
+## 자동화 매핑
+
+| 시나리오 | 검증하는 테스트 |
+|---|---|
+| 1 | `scripts/verify-numbering.ts`(개발 DB) |
+| 2 | `numbering.test.ts` |
+| 3, 4 | `spec-numbering.test.ts`, `spec-provenance.test.ts`, `spec-view.test.ts`, `spec-screen.spec.ts` |
+| 5 | `spec-screen.spec.ts`, `spec-sources.test.ts` |
+| 6~9 | `quotes.test.ts`, `spec-quotes.test.ts` (실제 Claude 발췌 일치율은 `tests/live`, 키 필요) |
+| 10~12 | `input-view.test.ts`, `inputs-screen.spec.ts` |
+| 13~15 | `board-pending.test.ts`, `board-pending.spec.ts` |
+| 16 | `home.test.ts`, `home.spec.ts` |
+| 17 | `spec-view.test.ts`, `spec-screen.spec.ts` |
+| 18~20 | `spec-diff-v2.test.ts`, `word-diff.test.ts`, `revert-preview.test.ts`, `history-screen.spec.ts` |
+| 21 | `api-authz-v3.test.ts`, `login-members.spec.ts`, `board-pending.spec.ts` |
+| 22 | `a11y-all-screens.spec.ts`, `ui-kit.spec.ts`, `keyboard.spec.ts` |
+| 23 | `login-members.spec.ts` |
+| 24 | `responsive.spec.ts` |
+| 25 | `design-parity.md`를 시안과 나란히 열어 사람이 확인 (자동화 불가) |
+| 성능 | `latency-v3.test.ts` |

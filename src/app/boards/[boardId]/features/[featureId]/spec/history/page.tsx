@@ -91,7 +91,7 @@ export default async function HistoryPage({
                     <Badge tone="wait" icon="refresh">~ 변경 {result.summary.changed}</Badge>
                     <Badge>동일 {result.summary.unchanged}</Badge>
                   </div>
-                  <Link href={toggleHref} aria-pressed={showUnchanged} className="small">
+                  <Link href={toggleHref} className="small">
                     {showUnchanged ? "변경 없는 항목 숨기기" : "변경 없는 항목도 보기"}
                   </Link>
                 </div>

@@ -76,7 +76,7 @@ export function DiffRow({ change }: { change: Change }) {
 
 export function UnchangedRow({ row }: { row: Unchanged }) {
   return (
-    <div className="diff-row" style={{ opacity: 0.85 }} data-change="NONE">
+    <div className="diff-row" data-change="NONE">
       <div className="diff-row__mark" style={{ color: "var(--ink-3)" }}>
         <span aria-hidden="true">=</span>
         <div>동일</div>
