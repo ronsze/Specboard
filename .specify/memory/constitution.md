@@ -1,50 +1,66 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Specboard Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. 모든 내용은 출처를 가진다
+spec의 모든 결정과 요구사항은 근거가 된 입력(회의록, 아이디어, 의견)과 연결되어야 한다(MUST).
+출처가 없는 내용은 spec에 포함해서는 안 된다(MUST NOT).
+근거: 팀이 정한 내용이 기록에서 사라져 생기는 충돌을 추적 가능한 근거로 막는다.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. AI는 지어내지 않는다
+입력이 부족하면 AI는 내용을 임의로 채워서는 안 되며(MUST NOT), 부족한 부분을 "미결 질문"으로
+남겨야 한다(MUST). 단편적인 아이디어 한 줄도 유효한 입력이다.
+근거: 지어낸 내용이 확정된 결정처럼 보이면 이후 충돌의 원인이 된다.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. 승인된 입력만 반영된다
+모든 입력(회의록, 아이디어, 의견)은 제출 시 "대기" 상태여야 하며(MUST), 관리자가 승인해야
+AI의 재료가 된다. 반려된 입력은 사유와 함께 기록으로 남겨야 한다(MUST). 관리자가 직접 낸
+입력은 자동 승인한다.
+- 승인 단계는 입력에만 둔다. 승인된 입력을 반영한 AI의 spec 갱신은 사람의 추가 승인 없이
+  새 버전으로 만들어진다.
+근거: 관리자가 입력을 걸러 신뢰를 확보하고, 버전 이력과 롤백(원칙 IV)으로 AI 오류를 되돌린다.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. 모든 변경은 버전과 이력으로 남는다
+spec 변경은 덮어쓰지 않고 새 버전으로 쌓아야 한다(MUST). 각 버전은 변경의 근거가 된 입력을
+기록해야 하며(MUST), 이전 버전으로 되돌릴 수 있어야 한다(MUST).
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. 충돌은 승인 전에 드러낸다
+승인 대기 중인 입력이 이미 확정된 결정과 어긋나면, AI가 관리자의 승인 화면에서 충돌로
+경고해야 한다(MUST). 충돌을 사후에 발견하는 구조여서는 안 된다(MUST NOT).
+근거: 충돌 방지가 이 제품의 존재 이유다.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. 권한은 보드 단위로 나뉜다
+- 관리자: 입력 승인과 반려, 멤버 관리, spec 확정
+- 멤버: 입력 제출, 열람
+- 열람자: 열람
+권한 검사는 서버에서 수행해야 하며(MUST), 화면 숨김만으로 대체해서는 안 된다(MUST NOT).
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VII. spec은 spec-kit 호환 마크다운이다
+확정된 spec은 spec-kit의 `/speckit-specify` 입력으로 바로 내보낼 수 있는 마크다운 형식을
+따라야 한다(MUST).
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## 제품 범위와 제약
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- 구조: 보드(팀) > 프로젝트 > feature. spec은 feature마다 하나씩 존재한다.
+- 형태: 웹앱. 단일 팀을 우선 지원한다.
+- MVP 포함: 보드·프로젝트·feature 구조, 입력 제출(회의록/아이디어/의견), 관리자 승인·반려,
+  AI spec 생성·갱신, 버전 이력과 롤백, 충돌 경고, 마크다운 내보내기
+- MVP 제외: 실시간 공동 편집, 외부 연동(Slack, Jira 등), 회의 음성 녹음·자동 전사, 다중 팀
+- 기술 스택(프론트엔드, 백엔드, DB, AI 모델 제공자)은 이 문서에서 정하지 않고
+  `/speckit-plan` 단계에서 결정한다.
+
+## 개발 워크플로
+
+- 개발은 spec-kit 흐름(constitution → specify → plan → tasks → implement)을 따른다.
+- 이 저장소의 커밋은 user.name `ronsze`, user.email `ljg5846@gmail.com`으로 작성해야 한다(MUST).
+  전역 git 설정은 변경하지 않고 저장소 로컬 설정을 사용한다.
+- 모든 plan은 Core Principles 준수 여부를 검토하는 Constitution Check를 포함해야 한다(MUST).
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+이 constitution은 다른 개발 관행에 우선한다. 개정은 변경 사유를 문서화하고 이 파일을
+수정하는 커밋으로 기록해야 한다. 원칙의 삭제나 재정의는 MAJOR, 원칙·섹션의 추가나 실질적
+확장은 MINOR, 문구 정리는 PATCH로 버전을 올린다. 모든 plan과 코드 리뷰는 원칙 준수를
+확인해야 하며, 원칙에서 벗어나는 복잡도는 plan에 사유를 적어 정당화해야 한다.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-23 | **Last Amended**: 2026-10-23
