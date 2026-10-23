@@ -32,3 +32,9 @@ export const writerOutputSchema = z.object({
 });
 
 export const revertSchema = z.object({ toVersion: z.number().int().min(1) });
+
+export const revertExpectedSchema = z.object({
+  latestVersion: z.number().int().min(1),
+  removedItems: z.number().int().min(0),
+  reopenedQuestions: z.number().int().min(0),
+});

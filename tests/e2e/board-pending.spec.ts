@@ -56,7 +56,7 @@ test("멤버가 승인 대기 주소로 직접 들어가면 403 안내가 보인
   const member = await (await browser.newContext(base)).newPage();
   await login(member, "member");
   await member.getByRole("link", { name: "입력 제출과 승인" }).click();
-  await member.waitForURL(/\/inputs$/);
+  await member.waitForURL(/\/features\/[^/]+\/(spec|inputs)$/);
   const boardPending = member.url().replace(/\/features\/.*$/, "/pending");
   await member.goto(boardPending);
   await expect(member.getByText("이 화면을 볼 권한이 없습니다")).toBeVisible();

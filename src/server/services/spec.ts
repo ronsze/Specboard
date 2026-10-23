@@ -3,7 +3,7 @@ import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { recoverStaleJobs, scheduleSpecUpdate, takeBatch, unconsumedApproved } from "@/server/services/spec-jobs";
 import { diffVersions, type Diff } from "@/server/services/spec-diff";
-import { ConflictError, NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
 import { deriveSpecStatus, type SpecStatus } from "@/server/services/spec-status";
 import { Prisma } from "@prisma/client";
 import { parse } from "@/server/services/inputs";
@@ -17,6 +17,7 @@ import {
   type VersionSummary,
 } from "@/server/services/spec-view";
 import { computeProvenance } from "@/server/services/spec-provenance";
+import { computeRevertImpact, type RevertExpected, type RevertPreview } from "@/server/services/revert-preview";
 
 export type SpecView = {
   status: SpecStatus;
@@ -187,6 +188,7 @@ export async function diff(
   from: number,
   to: number,
 ): Promise<Diff> {
+  if (from === to) throw new ValidationError("서로 다른 두 버전을 선택해 주세요.");
   const [a, b] = await Promise.all([
     getVersion(user, boardId, featureId, from),
     getVersion(user, boardId, featureId, to),
@@ -219,15 +221,66 @@ function sameContent(a: Snapshot, b: Snapshot): boolean {
   );
 }
 
+const snapshotInclude = {
+  items: { include: { sources: true } },
+  questions: { include: { sources: true } },
+} as const;
+
+/** 확정·없는 버전·내용 동일을 검사하고, 되돌리기에 필요한 (대상, 최신) 스냅샷과 영향을 계산한다. */
+async function loadRevertContext(tx: Prisma.TransactionClient, featureId: string, target: number) {
+  const spec = await tx.spec.findUnique({ where: { featureId } });
+  if (!spec) throw new NotFoundError("버전을 찾을 수 없습니다.");
+  if (spec.finalizedAt) {
+    throw new ConflictError("확정된 spec은 되돌릴 수 없습니다. 먼저 확정을 해제하세요.", { code: "FINALIZED" });
+  }
+  const source = await tx.specVersion.findUnique({
+    where: { specId_number: { specId: spec.id, number: target } },
+    include: snapshotInclude,
+  });
+  if (!source) throw new NotFoundError("버전을 찾을 수 없습니다.");
+  const latest = await tx.specVersion.findFirstOrThrow({
+    where: { specId: spec.id },
+    orderBy: { number: "desc" },
+    include: snapshotInclude,
+  });
+  if (sameContent(source, latest)) {
+    throw new ConflictError("현재 버전과 같은 내용이라 되돌릴 변화가 없습니다.", { code: "NO_CHANGE" });
+  }
+  const impact = computeRevertImpact(latest, source);
+  const preview: RevertPreview = {
+    toVersion: source.number,
+    latestVersion: latest.number,
+    newVersion: latest.number + 1,
+    finalized: false,
+    ...impact,
+  };
+  return { spec, source, latest, preview };
+}
+
+/** 되돌리기 영향 미리보기 (관리자 전용, 저장하지 않는 계산). revertSpec과 같은 계산을 쓴다. */
+export async function previewRevert(
+  user: { id: string },
+  boardId: string,
+  featureId: string,
+  toVersion: number,
+): Promise<RevertPreview> {
+  await requireRole(user.id, boardId, ["ADMIN"]);
+  await assertFeatureInBoard(boardId, featureId);
+  const { toVersion: target } = parse(revertSchema, { toVersion });
+  return (await loadRevertContext(db, featureId, target)).preview;
+}
+
 /**
  * 이전 버전으로 되돌린다 (관리자 전용). 선택한 버전과 같은 내용의 새 버전을 만들고 기존 버전은 보존한다.
  * 확정 상태이거나 최신 버전과 내용이 같으면 거부한다 (FR-014~FR-016, FR-020, FR-022).
+ * expected(미리보기 때의 최신 버전과 영향 수치)를 주면 달라졌을 때 실행하지 않고 PREVIEW_CHANGED로 거부한다 (FR-030).
  */
 export async function revertSpec(
   user: { id: string; displayName: string },
   boardId: string,
   featureId: string,
   toVersion: number,
+  expected?: RevertExpected,
 ): Promise<VersionSummary> {
   await requireRole(user.id, boardId, ["ADMIN"]);
   await assertFeatureInBoard(boardId, featureId);
@@ -235,15 +288,18 @@ export async function revertSpec(
 
   return db.$transaction(async (tx) => {
     await tx.$executeRaw(lockFeature(featureId));
-    const spec = await tx.spec.findUnique({ where: { featureId } });
-    if (!spec) throw new NotFoundError("버전을 찾을 수 없습니다.");
-    if (spec.finalizedAt) throw new ConflictError("확정된 spec은 되돌릴 수 없습니다. 먼저 확정을 해제하세요.");
-
-    const include = { items: { include: { sources: true } }, questions: { include: { sources: true } } } as const;
-    const source = await tx.specVersion.findUnique({ where: { specId_number: { specId: spec.id, number: target } }, include });
-    if (!source) throw new NotFoundError("버전을 찾을 수 없습니다.");
-    const latest = await tx.specVersion.findFirstOrThrow({ where: { specId: spec.id }, orderBy: { number: "desc" }, include });
-    if (sameContent(source, latest)) throw new ConflictError("현재 버전과 같은 내용이라 되돌릴 변화가 없습니다.");
+    const { spec, source, latest, preview } = await loadRevertContext(tx, featureId, target);
+    if (
+      expected &&
+      (expected.latestVersion !== preview.latestVersion ||
+        expected.removedItems !== preview.removedItems ||
+        expected.reopenedQuestions !== preview.reopenedQuestions)
+    ) {
+      throw new ConflictError("미리보기 이후 spec이 바뀌었습니다. 영향을 다시 확인해 주세요.", {
+        code: "PREVIEW_CHANGED",
+        preview,
+      });
+    }
 
     const created = await tx.specVersion.create({
       data: {

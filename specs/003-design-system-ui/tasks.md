@@ -191,22 +191,22 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 5
 
-- [ ] T067 [P] [US5] `tests/unit/word-diff.test.ts`에 단어 단위 diff 테스트를 작성한다: 어절 기준 추가·삭제 구간, 한글 문장, 변화 없음, 전부 다름, 빈 문자열 (FR-028)
-- [ ] T068 [P] [US5] `tests/integration/spec-diff-v2.test.ts`에 비교 확장 테스트를 작성한다: `summary`(추가·삭제·변경·동일 개수), 변경에 `label`·`kind`·`scope`, `addedSources`(to에만 있는 출처의 입력 번호), 같은 버전 비교는 400, 번호가 다르지만 내용이 같은 두 버전은 변경 0건과 `unchanged` 개수만 반환("차이가 없습니다" 표시용), 질문 변경(열림→해소) (FR-027, FR-028)
-- [ ] T069 [P] [US5] `tests/integration/revert-preview.test.ts`에 테스트를 작성한다: `removedItems`·`reopenedQuestions` 수와 라벨이 실제로 되돌린 결과와 일치(여러 조합으로 `revertSpec` 후 비교), 확정 상태 409(`FINALIZED`), 최신과 같은 내용 409(`NO_CHANGE`), `expected`가 일치하면 실행·불일치(미리보기 후 최신 버전이 바뀜, 영향 수치가 달라짐)하면 실행하지 않고 409 `PREVIEW_CHANGED`와 최신 미리보기 반환, 관리자 외 403 (FR-029, FR-030, SC-007)
-- [ ] T070 [P] [US5] `tests/e2e/history-screen.spec.ts`를 작성한다: 체크박스로 A/B 선택·같은 버전 거부, 요약 개수, 변경 없는 항목 숨김 토글, 단어 강조, 되돌리기 확인 창(영향 목록, 취소 기본 포커스, Esc 닫기, 키보드로 확정), 확정 상태에서는 되돌리기 버튼 대신 안내, 멤버에게는 버튼 없음 (시나리오 18~21)
+- [X] T067 [P] [US5] `tests/unit/word-diff.test.ts`에 단어 단위 diff 테스트를 작성한다: 어절 기준 추가·삭제 구간, 한글 문장, 변화 없음, 전부 다름, 빈 문자열 (FR-028)
+- [X] T068 [P] [US5] `tests/integration/spec-diff-v2.test.ts`에 비교 확장 테스트를 작성한다: `summary`(추가·삭제·변경·동일 개수), 변경에 `label`·`kind`·`scope`, `addedSources`(to에만 있는 출처의 입력 번호), 같은 버전 비교는 400, 번호가 다르지만 내용이 같은 두 버전은 변경 0건과 `unchanged` 개수만 반환("차이가 없습니다" 표시용), 질문 변경(열림→해소) (FR-027, FR-028)
+- [X] T069 [P] [US5] `tests/integration/revert-preview.test.ts`에 테스트를 작성한다: `removedItems`·`reopenedQuestions` 수와 라벨이 실제로 되돌린 결과와 일치(여러 조합으로 `revertSpec` 후 비교), 확정 상태 409(`FINALIZED`), 최신과 같은 내용 409(`NO_CHANGE`), `expected`가 일치하면 실행·불일치(미리보기 후 최신 버전이 바뀜, 영향 수치가 달라짐)하면 실행하지 않고 409 `PREVIEW_CHANGED`와 최신 미리보기 반환, 관리자 외 403 (FR-029, FR-030, SC-007)
+- [X] T070 [P] [US5] `tests/e2e/history-screen.spec.ts`를 작성한다: 체크박스로 A/B 선택·같은 버전 거부, 요약 개수, 변경 없는 항목 숨김 토글, 단어 강조, 되돌리기 확인 창(영향 목록, 취소 기본 포커스, Esc 닫기, 키보드로 확정), 확정 상태에서는 되돌리기 버튼 대신 안내, 멤버에게는 버튼 없음 (시나리오 18~21)
 
 ### Implementation for User Story 5
 
-- [ ] T071 [P] [US5] `src/lib/word-diff.ts`에 어절 토큰 LCS 기반 `wordDiff(before, after)`를 구현해 T067을 통과시킨다
-- [ ] T072 [US5] `src/server/services/spec-diff.ts`를 확장해 T068을 통과시킨다. 기존 응답 필드는 유지한다
-- [ ] T073 [US5] `src/server/services/revert-preview.ts`에 `previewRevert(user, boardId, featureId, toVersion)`와 순수 계산 함수 `computeRevertImpact(latest, target)`를 구현한다
-- [ ] T074 [US5] `src/server/services/spec.ts`의 `revertSpec`이 `computeRevertImpact`를 재사용하고, `expected`가 있으면 일치 여부를 확인해 달라졌으면 409 `PREVIEW_CHANGED`(최신 미리보기 포함)를 던지도록 수정해 T069를 통과시킨다. 오류 코드 `FINALIZED`, `NO_CHANGE`도 응답에 포함한다
-- [ ] T075 [US5] `src/app/api/boards/[boardId]/features/[featureId]/spec/revert-preview/route.ts`와 기존 `revert/route.ts`(본문 `expected`, 오류 본문)를 계약대로 구현·수정한다
-- [ ] T076 [P] [US5] `src/components/history/VersionCard.tsx`, `CompareBar.tsx`(A/B 체크 상태, 같은 버전 거부, `?a=&b=` 반영, JS 없는 환경은 select 폼 대체), `DiffRow.tsx`(+/−/~ 기호·글자·색, 종류·번호, 출처/새 출처, 이전·이후 단어 강조)를 만든다
-- [ ] T077 [US5] `src/components/history/RevertDialog.tsx`에 확인 창을 만든다: 미리보기 호출, "새 버전 vN이 만들어지고 기존 버전은 그대로 남는다" 안내, "항목 N개가 빠집니다"·"해소된 질문 M개가 다시 열립니다" 목록, 기본 포커스 취소, `expected`와 함께 실행, `PREVIEW_CHANGED`이면 갱신된 수치를 보여주고 다시 확인받기, 확정 상태면 안내와 확정 해제 링크 (FR-029, FR-030)
-- [ ] T078 [US5] `src/app/boards/[boardId]/features/[featureId]/spec/history/page.tsx`를 시안 2쪽 구조(좌: 버전 카드 목록과 "이전 버전 N개 더 보기", 우: 비교 결과와 요약, "변경 없는 항목도 보기" 토글)로 다시 만든다. 기존 `RevertButton`은 제거한다
-- [ ] T079 [US5] 기존 `tests/e2e/spec-flow.spec.ts`의 이력·되돌리기 단계를 새 화면에 맞게 갱신한다
+- [X] T071 [P] [US5] `src/lib/word-diff.ts`에 어절 토큰 LCS 기반 `wordDiff(before, after)`를 구현해 T067을 통과시킨다
+- [X] T072 [US5] `src/server/services/spec-diff.ts`를 확장해 T068을 통과시킨다. 기존 응답 필드는 유지한다
+- [X] T073 [US5] `src/server/services/revert-preview.ts`에 `previewRevert(user, boardId, featureId, toVersion)`와 순수 계산 함수 `computeRevertImpact(latest, target)`를 구현한다
+- [X] T074 [US5] `src/server/services/spec.ts`의 `revertSpec`이 `computeRevertImpact`를 재사용하고, `expected`가 있으면 일치 여부를 확인해 달라졌으면 409 `PREVIEW_CHANGED`(최신 미리보기 포함)를 던지도록 수정해 T069를 통과시킨다. 오류 코드 `FINALIZED`, `NO_CHANGE`도 응답에 포함한다
+- [X] T075 [US5] `src/app/api/boards/[boardId]/features/[featureId]/spec/revert-preview/route.ts`와 기존 `revert/route.ts`(본문 `expected`, 오류 본문)를 계약대로 구현·수정한다
+- [X] T076 [P] [US5] `src/components/history/VersionCard.tsx`, `CompareBar.tsx`(A/B 체크 상태, 같은 버전 거부, `?a=&b=` 반영, JS 없는 환경은 select 폼 대체), `DiffRow.tsx`(+/−/~ 기호·글자·색, 종류·번호, 출처/새 출처, 이전·이후 단어 강조)를 만든다
+- [X] T077 [US5] `src/components/history/RevertDialog.tsx`에 확인 창을 만든다: 미리보기 호출, "새 버전 vN이 만들어지고 기존 버전은 그대로 남는다" 안내, "항목 N개가 빠집니다"·"해소된 질문 M개가 다시 열립니다" 목록, 기본 포커스 취소, `expected`와 함께 실행, `PREVIEW_CHANGED`이면 갱신된 수치를 보여주고 다시 확인받기, 확정 상태면 안내와 확정 해제 링크 (FR-029, FR-030)
+- [X] T078 [US5] `src/app/boards/[boardId]/features/[featureId]/spec/history/page.tsx`를 시안 2쪽 구조(좌: 버전 카드 목록과 "이전 버전 N개 더 보기", 우: 비교 결과와 요약, "변경 없는 항목도 보기" 토글)로 다시 만든다. 기존 `RevertButton`은 제거한다
+- [X] T079 [US5] 기존 `tests/e2e/spec-flow.spec.ts`의 이력·되돌리기 단계를 새 화면에 맞게 갱신한다
 
 ---
 

@@ -10,9 +10,15 @@ export async function login(page: Page, who: "admin" | "member" | "viewer") {
   await page.waitForURL("/");
 }
 
+/** 홈에서 feature를 열면 spec 화면으로 가므로, 입력 화면으로 이동해 둔다. */
+async function toInputs(page: Page) {
+  await page.waitForURL(/\/features\/[^/]+\/(spec|inputs)$/);
+  if (page.url().endsWith("/spec")) await page.goto(page.url().replace(/\/spec$/, "/inputs"));
+}
+
 export async function openFeature(page: Page) {
   await page.getByRole("link", { name: "입력 제출과 승인" }).click();
-  await page.waitForURL(/\/inputs$/);
+  await toInputs(page);
 }
 
 /** 실행마다 새 feature를 만들어 다른 시나리오가 남긴 데이터와 섞이지 않게 한다. */
@@ -31,7 +37,7 @@ export async function createFeature(name: string) {
 
 export async function openFeatureByName(page: Page, name: string) {
   await page.getByRole("link", { name }).click();
-  await page.waitForURL(/\/inputs$/);
+  await toInputs(page);
 }
 
 /** 현재 feature 화면의 기준 주소 (…/features/[id]) */

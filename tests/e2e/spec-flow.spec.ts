@@ -45,20 +45,20 @@ test("입력 승인 → spec 반영 → 출처 → 이력 비교 → 되돌리�
   await admin.goto(`${adminBase}/spec`);
   await expect(admin.locator("article", { hasText: y })).toBeVisible({ timeout: 30_000 });
 
-  // 3. 이력 비교
+  // 3. 이력 비교 (기본 선택: 최신 두 버전)
   await admin.goto(`${adminBase}/spec/history`);
   await expect(admin.locator("article[data-version]")).toHaveCount(2);
-  await admin.getByRole("button", { name: "비교" }).click();
   const result = admin.getByRole("region", { name: "비교 결과" });
   await expect(result).toContainText("추가");
   await expect(result).toContainText(y);
 
-  // 4. 되돌리기: 이전 버전(x만 있는 버전)으로
+  // 4. 되돌리기: 이전 버전(x만 있는 버전)으로 — 영향 미리보기 확인 후 확정
   await clickUntil(
     () => admin.locator("article[data-version]").nth(1).getByRole("button", { name: "이 버전으로 되돌리기" }).click({ timeout: 2_000 }),
-    () => expect(admin.getByRole("button", { name: "되돌리기 확정" })).toBeVisible({ timeout: 2_000 }),
+    () => expect(admin.getByRole("dialog")).toBeVisible({ timeout: 2_000 }),
   );
-  await admin.getByRole("button", { name: "되돌리기 확정" }).click();
+  await expect(admin.getByRole("dialog")).toContainText("항목 1개가 빠집니다");
+  await admin.getByRole("dialog").getByRole("button", { name: "v1로 되돌리기" }).click();
   await admin.waitForURL(/\/spec$/);
   await expect(admin.locator("article", { hasText: x })).toBeVisible();
   await expect(admin.locator("article", { hasText: y })).toHaveCount(0);
