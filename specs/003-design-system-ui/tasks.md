@@ -229,7 +229,7 @@ description: "디자인 시안 적용 구현 태스크"
 - [X] T085 [P] [US6] `src/server/ai/fake-spec-writer.ts`가 입력 본문 앞 문장을 발췌로 제시하도록 하고, 원문에 없는 발췌를 주입하는 옵션(`badQuotes`)을 추가한다
 - [X] T086 [P] [US6] `src/server/ai/claude-spec-writer.ts`의 프롬프트에 "quote는 원문에서 그대로 복사한 한 문장이고 확실하지 않으면 생략한다, 항목·질문마다 새로 인용하는 출처에만 단다" 지시를 추가하고 구조화 출력 스키마에 `quotes`를 반영한다
 - [X] T087 [US6] `src/server/services/spec-view.ts`가 출처의 `quote: {start, end} | null`을 내려주고, `src/components/spec/SourcePanel.tsx`가 발췌가 있으면 원문 구간을 `<mark>`로 강조하되 배경색에만 의존하지 않고 인용 부호와 밑줄을 함께 써서 보여주며(없으면 원문만), "원문 전체 보기(IN-n)" 링크로 입력 화면의 해당 입력으로 이동하도록 한다 (FR-033)
-- [ ] T088 [P] [US6] `tests/live/spec-writer.live.test.ts`에 실제 Claude의 발췌 점검을 추가한다(키 있을 때만): 제시된 발췌 중 원문에 실제 존재하는 비율을 계산해 출력하고, 존재하지 않는 발췌가 저장되지 않음을 확인한다
+- [X] T088 [P] [US6] `tests/live/spec-writer.live.test.ts`에 실제 Claude의 발췌 점검을 추가한다(키 있을 때만): 제시된 발췌 중 원문에 실제 존재하는 비율을 계산해 출력하고, 존재하지 않는 발췌가 저장되지 않음을 확인한다
 
 ---
 

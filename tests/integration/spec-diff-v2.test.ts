@@ -64,6 +64,8 @@ describe("비교 확장 (시나리오 18)", () => {
     expect(d.questions[0]).toMatchObject({ change: "CHANGED", scope: "QUESTION", label: "Q-1" });
     expect(d.questions[0].before).toContain("열림");
     expect(d.questions[0].after).toContain("해소");
+    const labels = d.questions[0].addedSources.map((s) => s.label);
+    expect(new Set(labels).size).toBe(labels.length); // 같은 입력이 두 번 나오지 않는다
     expect(d.items[0]).toMatchObject({ change: "ADDED", label: "D-1", kind: "DECISION" });
   });
 });

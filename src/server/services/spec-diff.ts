@@ -43,7 +43,8 @@ const questionEntries = (v: VersionDetail): Entry[] =>
     label: q.label,
     kind: null,
     text: `${q.text} (${q.status === "OPEN" ? "열림" : "해소"})`,
-    sources: [...q.sources, ...(q.resolvedBy ? [q.resolvedBy] : [])],
+    // 해소한 입력이 이미 출처에 들어 있으면 중복해서 세지 않는다
+    sources: [...q.sources, ...(q.resolvedBy ? [q.resolvedBy] : [])].filter((s, i, all) => all.findIndex((x) => x.inputId === s.inputId) === i),
   }));
 
 function diffEntries(scope: Change["scope"], from: Entry[], to: Entry[]): { changes: Change[]; unchanged: Unchanged[] } {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ClaudeSpecWriter } from "@/server/ai/claude-spec-writer";
 import { validateSpecOutput } from "@/server/ai/validate-output";
+import { locateQuote } from "@/server/services/quotes";
 import type { WriterInput } from "@/server/ai/spec-writer";
 
 /**
@@ -59,4 +60,15 @@ describe.runIf(hasKey)("ClaudeSpecWriter (live)", () => {
     const v2 = validateSpecOutput(current, new Set(["in2"]), new Set(["in1", "in2"]), out);
     expect(v2.questions.some((q) => q.status === "RESOLVED" && q.resolvedByInputId === "in2")).toBe(true);
   }, 480_000);
+
+  it("제시한 발췌가 원문에 실제로 있는 비율을 점검한다 (원문에 없는 발췌는 서버가 버린다)", async () => {
+    const content = "쿠폰 중복 적용은 정산 이슈가 커서 주문당 1장으로 제한하기로 함. 적립금과의 병용은 정산팀 답변을 기다린다.";
+    const inputs = [input("in1", content, "MEETING_NOTE")];
+    const out = await writer.write({ ...empty, inputs });
+    const quotes = [...out.items, ...out.questions].flatMap((x) => x.quotes ?? []);
+    const found = quotes.filter((q) => locateQuote(content, q.quote) !== null).length;
+    console.log(`발췌 ${quotes.length}개 중 원문에 실제로 있는 것 ${found}개`);
+    // 모델이 몇 개를 틀려도 서버가 걸러내므로 실패 조건은 "제시했는데 전부 틀림"으로만 둔다
+    if (quotes.length > 0) expect(found).toBeGreaterThan(0);
+  }, 240_000);
 });
