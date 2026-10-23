@@ -38,7 +38,7 @@ paths:
       - {$ref: '#/components/parameters/boardId'}
       - {name: inputId, in: path, required: true, schema: {type: string}}
     post:
-      summary: 실패한 검사 다시 시도 (ADMIN). 새 검사 기록이 만들어지고 이전 기록은 보존된다
+      summary: 검사 다시 시도 (ADMIN, PENDING 입력만). 최신 결과가 실패이거나 비교 대상이 생긴 검사 안 함이거나 낡은(stale) 경우에 가능하다. 새 검사 기록이 만들어지고 이전 기록은 보존된다
       responses:
         '202': {description: 검사 등록됨}
         '403': {$ref: '#/components/responses/Forbidden'}
@@ -51,7 +51,7 @@ paths:
                 type: object
                 properties:
                   error: {type: string}
-                  code: {type: string, enum: [NOT_FAILED, ALREADY_RUNNING, INPUT_PROCESSED]}
+                  code: {type: string, enum: [NOT_RECHECKABLE, ALREADY_RUNNING, INPUT_PROCESSED]}
 components:
   securitySchemes:
     session: {type: apiKey, in: cookie, name: session}
@@ -101,6 +101,10 @@ components:
         warnings: {type: array, maxItems: 5, items: {$ref: '#/components/schemas/Warning'}}
         unacknowledgedCount: {type: integer}
         checkedAt: {type: [string, 'null'], format: date-time}
+        baseVersion: {type: [integer, 'null'], description: 검사가 비교에 쓴 spec 버전}
+        currentSpecVersion: {type: [integer, 'null'], description: 지금 spec 최신 버전}
+        stale: {type: boolean, description: 검사 이후 spec이 갱신되었거나 비교 대상이 새로 생김}
+        recheckable: {type: boolean, description: 다시 검사 버튼 표시 조건}
         processedAs: {type: [string, 'null'], enum: [APPROVED, REJECTED, null]}
     PendingInputWithConflict:
       allOf:

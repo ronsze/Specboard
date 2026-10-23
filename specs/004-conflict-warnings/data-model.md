@@ -54,10 +54,11 @@
                                               │ 3회 소진 / REFUSED / TOO_LARGE
                                               ▼
                                            FAILED ──(관리자 다시 검사, 입력이 PENDING)──► 새 ConflictCheck(QUEUED)
+       SKIPPED(비교 대상이 이후 생김) / DONE(stale) ──(관리자 다시 검사, 입력이 PENDING)──► 새 ConflictCheck(QUEUED)
 ```
 
 - 입력이 승인·반려되어도 진행 중인 검사는 끝까지 수행된다. 완료되면 경고는 "처리됨(승인됨/반려됨)"으로 표시된다
-- DONE·SKIPPED·이미 진행 중인 검사, 또는 입력이 PENDING이 아닐 때의 다시 검사는 거부된다
+- 입력이 PENDING이 아니거나, 활성 검사가 있거나, 최신 검사가 최신 spec 기준으로 `DONE`/비교 대상이 없는 `SKIPPED`이면 다시 검사는 거부된다
 
 ## 화면용 조회 모델 (저장하지 않음)
 
@@ -71,6 +72,10 @@
 | warnings | 경고 목록(확정 충돌 먼저, 그다음 생성 순). 각 경고: `id, label, kind, itemText, onFinalizedSpec, reason, quote({start,end}\|null), acknowledged({byName, at}\|null)` |
 | unacknowledgedCount | 열린 경고 수 |
 | checkedAt | 최근 완료 시각 |
+| baseVersion | 검사가 비교에 쓴 spec 버전 번호. `SKIPPED`면 null |
+| currentSpecVersion | 지금 spec의 최신 버전 번호 (spec 없으면 null) |
+| stale | `DONE`인데 `baseVersion < currentSpecVersion`이거나, `SKIPPED`인데 지금은 비교할 항목이 있는 spec이 생긴 경우 |
+| recheckable | 입력이 `PENDING`이고 활성 검사가 없으며 (`FAILED`이거나 `SKIPPED`이면서 비교 대상이 생겼거나 `stale`)인 경우. 다시 검사 버튼의 표시 조건 |
 | processedAs | 입력이 APPROVED/REJECTED이면 그 값, PENDING이면 null |
 
 - 입력에 검사 기록이 전혀 없으면(이 feature 이전의 입력, 관리자 제출) `conflict`는 `null`이다 — 화면에 검사 표시 없음
@@ -85,7 +90,8 @@
 | `onFinalizedSpec` 기록과 구분 표시 | FR-007, SC-006 |
 | 검사 행이 없거나 SKIPPED면 AI 미호출 | FR-010, FR-011 |
 | 입력당 활성 검사 1개(부분 유니크), 원자적 claim | 엣지 케이스(동시 검사 금지) |
-| FAILED이고 PENDING일 때만 재시도 | FR-014 |
+| 입력이 PENDING이고 활성 검사가 없으며 (FAILED, 비교 대상이 생긴 SKIPPED, stale DONE)일 때만 재시도 | FR-014 |
+| `baseVersion`과 `currentSpecVersion`으로 stale 계산·표시 | FR-025, SC-010 |
 | 확인 필드는 한 번만 설정, 입력 상태 불변 | FR-016, FR-017 |
 | 비관리자 응답에 `conflict` 필드를 만들지 않음 | FR-019, SC-005 |
 | 제출·승인 경로에서 검사 오류를 삼킴 | FR-013, SC-002 |
