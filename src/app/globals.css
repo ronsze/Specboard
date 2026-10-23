@@ -21,3 +21,8 @@ pre { white-space: pre-wrap; margin: 8px 0; font: inherit; }
 .sources summary { cursor: pointer; font-size: 13px; opacity: .8; }
 .sources ul { list-style: none; padding: 0; margin: 8px 0 0; }
 .sources li { border-left: 3px solid #8886; padding-left: 10px; margin-bottom: 8px; }
+.diff { border-left: 4px solid #8886; padding-left: 10px; margin: 8px 0; }
+.diff.ADDED { border-color: #3fb950; }
+.diff.REMOVED { border-color: #e5534b; }
+.diff.CHANGED { border-color: #d29922; }
+.diff .before { text-decoration: line-through; opacity: .65; }

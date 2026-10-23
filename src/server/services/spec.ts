@@ -2,10 +2,14 @@ import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { recoverStaleJobs, unconsumedApproved } from "@/server/services/spec-jobs";
+import { diffVersions, type Diff } from "@/server/services/spec-diff";
+import { NotFoundError } from "@/lib/errors";
 import {
   toVersionDetail,
+  toVersionSummary,
   versionInclude,
   type VersionDetail,
+  type VersionSummary,
 } from "@/server/services/spec-view";
 
 export type SpecStatus = "NONE" | "IDLE" | "UPDATING" | "FAILED" | "FINALIZED";
@@ -65,4 +69,58 @@ export async function getSpec(
     return { ...base, status: "NONE", message: "승인된 입력이 아직 없습니다." };
   }
   return { ...base, status: "IDLE", message: null };
+}
+
+async function readableSpec(user: { id: string }, boardId: string, featureId: string) {
+  await requireRole(user.id, boardId, ALL_ROLES);
+  await assertFeatureInBoard(boardId, featureId);
+  return db.spec.findUnique({ where: { featureId }, select: { id: true } });
+}
+
+/** 버전 이력, 최신순 (FR-010, FR-012). */
+export async function listVersions(
+  user: { id: string },
+  boardId: string,
+  featureId: string,
+): Promise<VersionSummary[]> {
+  const spec = await readableSpec(user, boardId, featureId);
+  if (!spec) return [];
+  const versions = await db.specVersion.findMany({
+    where: { specId: spec.id },
+    orderBy: { number: "desc" },
+    include: { inputs: true },
+  });
+  return versions.map(toVersionSummary);
+}
+
+export async function getVersion(
+  user: { id: string },
+  boardId: string,
+  featureId: string,
+  number: number,
+): Promise<VersionDetail> {
+  const spec = await readableSpec(user, boardId, featureId);
+  const version = spec
+    ? await db.specVersion.findUnique({
+        where: { specId_number: { specId: spec.id, number } },
+        include: versionInclude,
+      })
+    : null;
+  if (!version) throw new NotFoundError("버전을 찾을 수 없습니다.");
+  return toVersionDetail(version);
+}
+
+/** 두 버전 비교 (FR-013). */
+export async function diff(
+  user: { id: string },
+  boardId: string,
+  featureId: string,
+  from: number,
+  to: number,
+): Promise<Diff> {
+  const [a, b] = await Promise.all([
+    getVersion(user, boardId, featureId, from),
+    getVersion(user, boardId, featureId, to),
+  ]);
+  return diffVersions(a, b);
 }

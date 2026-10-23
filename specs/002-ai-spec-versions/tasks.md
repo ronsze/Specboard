@@ -109,15 +109,15 @@ description: "AI spec 생성과 버전 이력 구현 태스크"
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] `tests/unit/diff.test.ts`에 `key` 기준 비교(ADDED, REMOVED, CHANGED, 변화 없음, 항목 순서만 바뀜은 변경 아님, 질문의 상태 변화는 CHANGED)를 작성한다
-- [ ] T035 [P] [US3] `tests/integration/spec-history.test.ts`에 시나리오 9, 19(최신순 목록에 번호·생성 시각·생성 방식·근거 입력 id 포함, 버전 상세, 비교, 없는 버전 404, 비멤버 403, 열람자도 가능)를 작성한다
+- [X] T034 [P] [US3] `tests/unit/diff.test.ts`에 `key` 기준 비교(ADDED, REMOVED, CHANGED, 변화 없음, 항목 순서만 바뀜은 변경 아님, 질문의 상태 변화는 CHANGED)를 작성한다
+- [X] T035 [P] [US3] `tests/integration/spec-history.test.ts`에 시나리오 9, 19(최신순 목록에 번호·생성 시각·생성 방식·근거 입력 id 포함, 버전 상세, 비교, 없는 버전 404, 비멤버 403, 열람자도 가능)를 작성한다
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] `src/server/services/spec-diff.ts`에 `diffVersions(from, to)`를 구현해 T034를 통과시킨다 (FR-013)
-- [ ] T037 [US3] `src/server/services/spec.ts`에 `listVersions`, `getVersion`, `diff`를 구현한다: 전 역할 열람, 비멤버 거부 (FR-010, FR-012, FR-021)
-- [ ] T038 [US3] `src/app/api/boards/[boardId]/features/[featureId]/spec/versions/route.ts`, `versions/[number]/route.ts`, `diff/route.ts`를 계약대로 구현한다
-- [ ] T039 [US3] `src/app/boards/[boardId]/features/[featureId]/spec/history/page.tsx`에 버전 목록(번호, 시각, 생성 방식, 근거 입력)과 두 버전 선택 비교 화면(추가·삭제·변경 구분)을 구현하고 spec 화면에서 링크한다
+- [X] T036 [US3] `src/server/services/spec-diff.ts`에 `diffVersions(from, to)`를 구현해 T034를 통과시킨다 (FR-013)
+- [X] T037 [US3] `src/server/services/spec.ts`에 `listVersions`, `getVersion`, `diff`를 구현한다: 전 역할 열람, 비멤버 거부 (FR-010, FR-012, FR-021)
+- [X] T038 [US3] `src/app/api/boards/[boardId]/features/[featureId]/spec/versions/route.ts`, `versions/[number]/route.ts`, `diff/route.ts`를 계약대로 구현한다
+- [X] T039 [US3] `src/app/boards/[boardId]/features/[featureId]/spec/history/page.tsx`에 버전 목록(번호, 시각, 생성 방식, 근거 입력)과 두 버전 선택 비교 화면(추가·삭제·변경 구분)을 구현하고 spec 화면에서 링크한다
 
 ---
 
