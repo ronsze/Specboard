@@ -61,8 +61,8 @@ description: "입력 제출과 관리자 승인 구현 태스크"
 ### Implementation for User Story 1
 
 - [ ] T014 [P] [US1] `src/lib/schemas/input.ts`에 Zod 스키마를 정의한다: `kind` enum 3종, `content`는 "공백 제외 1자 이상 50,000자 이하" (FR-003, FR-004)
-- [ ] T015 [US1] `src/server/services/inputs.ts`에 `submitInput(user, boardId, featureId, payload)`를 구현한다: MEMBER/ADMIN만 허용, 상태 PENDING, submitterName 스냅샷 저장 (FR-001, FR-002, FR-005, FR-019)
-- [ ] T016 [US1] `src/server/services/inputs.ts`에 `listInputs(user, boardId, featureId, status?)`를 구현한다: 모든 멤버 역할 허용, 비멤버 거부
+- [ ] T015 [US1] `src/server/services/inputs.ts`에 `submitInput(user, boardId, featureId, payload)`를 구현한다: MEMBER/ADMIN만 허용, MEMBER 제출은 상태 PENDING, ADMIN 제출은 APPROVED·autoApproved=true·decidedBy=제출자·decidedAt=제출 시각, submitterName 스냅샷 저장 (FR-001, FR-002, FR-005, FR-006, FR-019)
+- [ ] T016 [US1] `src/server/services/inputs.ts`에 `listInputs(user, boardId, featureId, status?)`를 구현한다: 모든 멤버 역할 허용, 비멤버 거부. ADMIN은 전체, 그 외 역할은 승인·반려 입력과 본인이 제출한 대기 입력만 반환하며, 비관리자가 `status=PENDING`을 지정하면 `ForbiddenError` (FR-021)
 - [ ] T017 [US1] `src/app/api/boards/[boardId]/features/[featureId]/inputs/route.ts`에 GET/POST Route Handler를 계약(openapi.yaml)대로 구현한다
 - [ ] T018 [US1] `src/app/boards/[boardId]/features/[featureId]/inputs/page.tsx`에 입력 목록과 제출 폼(종류 선택, 내용, 상태·제출자·시각 표시)을 구현한다
 - [ ] T019 [US1] `tests/e2e/submit-input.spec.ts`에 멤버 로그인 → 아이디어 한 줄 제출 → 대기 표시 E2E를 작성한다
@@ -104,7 +104,7 @@ description: "입력 제출과 관리자 승인 구현 태스크"
 **Independent Test**: 관리자 계정으로 제출한 입력이 즉시 APPROVED이고 autoApproved가 true (시나리오 3)
 
 - [ ] T030 [P] [US3] `tests/integration/inputs-auto-approve.test.ts`에 시나리오 3(ADMIN 제출 → APPROVED, autoApproved=true, 승인 기록)을 작성한다
-- [ ] T031 [US3] `src/server/services/inputs.ts`의 `submitInput`에서 ADMIN 제출 시 APPROVED·autoApproved=true·decidedBy=제출자·decidedAt=제출 시각으로 저장하도록 분기한다 (FR-006)
+- [ ] T031 [US3] 자동 승인 입력의 `decidedByName`·`decidedAt`·`autoApproved`가 API 응답(contracts/openapi.yaml의 Input)에 계약대로 포함되도록 `src/server/services/inputs.ts`의 직렬화를 확인·보완한다 (FR-006)
 - [ ] T032 [US3] 입력 목록 화면(T018 파일)에 "자동 승인" 표시를 추가한다
 
 ---
@@ -115,12 +115,12 @@ description: "입력 제출과 관리자 승인 구현 태스크"
 
 **Independent Test**: 세 역할 계정으로 제출·승인·열람을 시도해 허용·거부를 확인 (시나리오 10~12)
 
-- [ ] T033 [P] [US4] `tests/integration/authz-matrix.test.ts`에 data-model.md의 권한 매트릭스 전 조합(시나리오 10, 11: 열람자 제출 403, 멤버 승인 403, 비멤버 열람 403)을 작성한다
-- [ ] T034 [P] [US4] `tests/integration/members.test.ts`에 멤버 추가, 역할 변경, 시나리오 12(유일한 관리자 강등 시 409)를 작성한다
+- [ ] T033 [P] [US4] `tests/integration/authz-matrix.test.ts`에 data-model.md의 권한 매트릭스 전 조합(시나리오 10, 11: 열람자 제출 403, 멤버 승인 403, 비멤버 열람 403)과 FR-021(비관리자의 `status=PENDING` 요청 403, 타인의 대기 입력이 목록에 없음, 본인의 대기 입력은 보임)을 작성한다
+- [ ] T034 [P] [US4] `tests/integration/members.test.ts`에 멤버 추가, 역할 변경, 시나리오 12(유일한 관리자 강등 시 409), 제출 후 제출자 역할이 VIEWER로 낮아져도 기존 입력이 유지되는 케이스를 작성한다
 - [ ] T035 [US4] `src/server/services/members.ts`에 `listMembers`, `addMember(email, role)`, `changeRole`을 구현한다: ADMIN만 허용, 이미 멤버면 409, 없는 이메일이면 404, 역할 변경은 트랜잭션 안에서 "보드마다 ADMIN이 1명 이상" 불변식을 재검사해 위반 시 `ConflictError` (FR-012, FR-013, FR-020)
 - [ ] T036 [US4] `src/app/api/boards/[boardId]/members/route.ts`와 `members/[userId]/route.ts`를 계약대로 구현한다
 - [ ] T037 [US4] `src/app/boards/[boardId]/members/page.tsx`에 멤버 목록, 추가, 역할 변경 UI를 구현한다
-- [ ] T038 [US4] 모든 입력 Route Handler가 서비스 계층의 `requireRole`을 통과하는지 점검하고, 누락된 곳을 보완한다 (FR-014, FR-015, FR-016)
+- [ ] T038 [US4] 모든 입력 Route Handler가 서비스 계층의 `requireRole`을 통과하는지 점검하고, 누락된 곳을 보완한다 (FR-014, FR-015, FR-016, FR-021)
 
 ---
 
@@ -128,7 +128,7 @@ description: "입력 제출과 관리자 승인 구현 태스크"
 
 - [ ] T039 [P] `src/lib/errors.ts`의 오류가 화면에서 사용자 친화 메시지(빈 내용, 길이 초과, 이미 처리됨, 권한 없음)로 표시되도록 처리한다
 - [ ] T040 [P] `specs/001-input-approval/quickstart.md`의 "실행" 절을 실제 `package.json` 스크립트 명령으로 갱신한다
-- [ ] T041 quickstart.md 시나리오 1~12를 처음부터 끝까지 수행해 결과를 확인한다
+- [ ] T041 quickstart.md 시나리오 1~13를 처음부터 끝까지 수행해 결과를 확인하고, 서버 처리 p95 300ms 이내(plan.md), 제출 30초 이내(SC-001), 승인 클릭 두 번 이내(SC-002)를 함께 확인한다
 
 ---
 

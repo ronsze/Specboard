@@ -10,7 +10,7 @@ paths:
   /boards/{boardId}/features/{featureId}/inputs:
     parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/featureId'}]
     get:
-      summary: 입력 목록 (ADMIN/MEMBER/VIEWER)
+      summary: 입력 목록 (ADMIN/MEMBER/VIEWER). 비관리자에게는 승인·반려 입력과 본인의 대기 입력만 반환하며, 비관리자가 status=PENDING을 지정하면 403
       parameters:
         - {name: status, in: query, schema: {$ref: '#/components/schemas/InputStatus'}}
       responses:

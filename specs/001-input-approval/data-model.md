@@ -11,7 +11,7 @@
 ### Membership
 - boardId, userId, role(`ADMIN` | `MEMBER` | `VIEWER`), createdAt
 - 유니크: (boardId, userId) → 한 보드에서 한 역할만 (가정)
-- 불변식: 보드마다 `ADMIN`이 1명 이상 (FR-020). 역할 변경·멤버 제거는 트랜잭션 내 재검사
+- 불변식: 보드마다 `ADMIN`이 1명 이상 (FR-020). 역할 변경은 트랜잭션 내 재검사 (멤버 제거는 범위 밖)
 
 ### Project, Feature (이 feature에서는 최소 형태)
 - Project: id, boardId, name
@@ -25,7 +25,7 @@
 | featureId | 대상 feature |
 | kind | `MEETING_NOTE` \| `IDEA` \| `OPINION` |
 | content | 텍스트, 공백 제외 1자 이상 50,000자 이하 |
-| submittedBy | userId (제거된 사용자도 기록 유지: 제출자 표시명 스냅샷 `submitterName`도 저장) |
+| submittedBy | userId (제출자 표시명 스냅샷 `submitterName`도 함께 저장) |
 | submittedAt | |
 | status | `PENDING` \| `APPROVED` \| `REJECTED` |
 | decidedBy, decidedAt | 승인·반려 시 설정 |
@@ -53,13 +53,14 @@
 | 종결 상태 재처리 거부 | FR-009 |
 | 승인 입력만 조회하는 `listApprovedInputs(featureId)` | FR-010 |
 | 반려 입력 삭제 API 없음 | FR-011 |
-| 마지막 ADMIN 강등·제거 거부 | FR-020 |
+| 마지막 ADMIN 강등 거부 | FR-020 |
+| 비관리자는 타인의 PENDING 입력을 볼 수 없음 | FR-021 |
 
 ## 권한 매트릭스 (서버 강제)
 
 | 동작 | ADMIN | MEMBER | VIEWER | 비멤버 |
 |---|---|---|---|---|
-| 입력 목록·열람 | O | O | O | X |
+| 입력 목록·열람 (ADMIN: 전체, MEMBER·VIEWER: 승인·반려 입력 + 본인의 대기 입력) | O | O | O | X |
 | 입력 제출 | O (자동 승인) | O (대기) | X | X |
 | 승인·반려 | O | X | X | X |
 | 대기 목록 조회 | O | X | X | X |
