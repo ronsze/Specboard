@@ -5,6 +5,8 @@ import { getSpec } from "@/server/services/spec";
 import { drainSpecJobs } from "@/server/services/spec-jobs";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { RetryButton } from "@/components/RetryButton";
+import { SpecItemList } from "@/components/SpecItemList";
+import { OpenQuestionList } from "@/components/OpenQuestionList";
 
 const STATUS_LABEL = {
   NONE: "입력 없음",
@@ -52,16 +54,10 @@ export default async function SpecPage({
         </p>
       )}
       {spec.version && (
-        <section aria-label="spec 항목">
-          {spec.version.items.length === 0 && <p className="meta">아직 항목이 없습니다.</p>}
-          {spec.version.items.map((item) => (
-            <article key={item.key} className="card" data-key={item.key}>
-              <span className="badge">{item.kind === "DECISION" ? "결정" : "요구사항"}</span>
-              <pre>{item.text}</pre>
-              <div className="meta">출처 {item.sources.length}개</div>
-            </article>
-          ))}
-        </section>
+        <>
+          <SpecItemList items={spec.version.items} />
+          <OpenQuestionList questions={spec.version.questions} />
+        </>
       )}
     </main>
   );

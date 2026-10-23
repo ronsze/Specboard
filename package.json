@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "test": "vitest run",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "postinstall": "prisma generate",
     "test:e2e": "playwright test"
   },

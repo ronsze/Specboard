@@ -18,3 +18,6 @@ pre { white-space: pre-wrap; margin: 8px 0; font: inherit; }
 .badge.FAILED { background: #e5534b33; }
 .badge.FINALIZED { background: #8957e533; }
 .badge.IDLE, .badge.NONE { background: #8883; }
+.sources summary { cursor: pointer; font-size: 13px; opacity: .8; }
+.sources ul { list-style: none; padding: 0; margin: 8px 0 0; }
+.sources li { border-left: 3px solid #8886; padding-left: 10px; margin-bottom: 8px; }
