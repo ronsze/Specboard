@@ -3,6 +3,8 @@ import { PrismaClient, type Role } from "@prisma/client";
 export const testDb = new PrismaClient();
 
 export async function resetDb() {
+  await testDb.specJob.deleteMany();
+  await testDb.spec.deleteMany();
   await testDb.input.deleteMany();
   await testDb.feature.deleteMany();
   await testDb.project.deleteMany();

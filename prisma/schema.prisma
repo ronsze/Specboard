@@ -64,30 +64,160 @@ model Project {
 }
 
 model Feature {
-  id        String  @id @default(cuid())
+  id        String    @id @default(cuid())
   projectId String
   name      String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   inputs    Input[]
+  spec      Spec?
+  jobs      SpecJob[]
 }
 
 model Input {
-  id              String      @id @default(cuid())
-  featureId       String
-  kind            InputKind
-  content         String
-  submittedBy     String?
-  submitterName   String
-  submittedAt     DateTime    @default(now())
-  status          InputStatus @default(PENDING)
-  decidedBy       String?
-  decidedByName   String?
-  decidedAt       DateTime?
-  autoApproved    Boolean     @default(false)
-  rejectionReason String?
-  feature         Feature     @relation(fields: [featureId], references: [id], onDelete: Cascade)
-  submitter       User?       @relation("submitter", fields: [submittedBy], references: [id], onDelete: SetNull)
-  decider         User?       @relation("decider", fields: [decidedBy], references: [id], onDelete: SetNull)
+  id                String               @id @default(cuid())
+  featureId         String
+  kind              InputKind
+  content           String
+  submittedBy       String?
+  submitterName     String
+  submittedAt       DateTime             @default(now())
+  status            InputStatus          @default(PENDING)
+  decidedBy         String?
+  decidedByName     String?
+  decidedAt         DateTime?
+  autoApproved      Boolean              @default(false)
+  rejectionReason   String?
+  consumedAt        DateTime?
+  consumedVersionId String?
+  feature           Feature              @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  versionLinks      SpecVersionInput[]
+  itemSources       SpecItemSource[]
+  questionSources   OpenQuestionSource[]
+  resolvedQuestions OpenQuestion[]       @relation("questionResolver")
+  submitter         User?                @relation("submitter", fields: [submittedBy], references: [id], onDelete: SetNull)
+  decider           User?                @relation("decider", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@index([featureId, status])
+}
+
+enum SpecVersionKind {
+  AI_UPDATE
+  REVERT
+}
+
+enum SpecItemKind {
+  DECISION
+  REQUIREMENT
+}
+
+enum QuestionStatus {
+  OPEN
+  RESOLVED
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  FAILED
+  DONE
+}
+
+model Spec {
+  id               String        @id @default(cuid())
+  featureId        String        @unique
+  currentVersionId String?
+  finalizedAt      DateTime?
+  finalizedBy      String?
+  finalizedByName  String?
+  createdAt        DateTime      @default(now())
+  feature          Feature       @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  versions         SpecVersion[]
+}
+
+model SpecVersion {
+  id                 String             @id @default(cuid())
+  specId             String
+  number             Int
+  kind               SpecVersionKind
+  revertedFromNumber Int?
+  createdBy          String?
+  createdByName      String?
+  model              String?
+  createdAt          DateTime           @default(now())
+  spec               Spec               @relation(fields: [specId], references: [id], onDelete: Cascade)
+  inputs             SpecVersionInput[]
+  items              SpecItem[]
+  questions          OpenQuestion[]
+
+  @@unique([specId, number])
+}
+
+model SpecVersionInput {
+  versionId String
+  inputId   String
+  version   SpecVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  input     Input       @relation(fields: [inputId], references: [id], onDelete: Cascade)
+
+  @@id([versionId, inputId])
+}
+
+model SpecItem {
+  id        String           @id @default(cuid())
+  versionId String
+  key       String
+  kind      SpecItemKind
+  text      String
+  position  Int
+  version   SpecVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  sources   SpecItemSource[]
+
+  @@index([versionId])
+}
+
+model SpecItemSource {
+  itemId  String
+  inputId String
+  item    SpecItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  input   Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, inputId])
+}
+
+model OpenQuestion {
+  id                String               @id @default(cuid())
+  versionId         String
+  key               String
+  text              String
+  status            QuestionStatus
+  resolvedByInputId String?
+  position          Int
+  version           SpecVersion          @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  resolvedBy        Input?               @relation("questionResolver", fields: [resolvedByInputId], references: [id], onDelete: SetNull)
+  sources           OpenQuestionSource[]
+
+  @@index([versionId])
+}
+
+model OpenQuestionSource {
+  questionId String
+  inputId    String
+  question   OpenQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  input      Input        @relation(fields: [inputId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, inputId])
+}
+
+model SpecJob {
+  id         String    @id @default(cuid())
+  featureId  String
+  status     JobStatus @default(QUEUED)
+  attempts   Int       @default(0)
+  lastError  String?
+  leaseUntil DateTime?
+  runAfter   DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  feature    Feature   @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@index([featureId, status])
 }

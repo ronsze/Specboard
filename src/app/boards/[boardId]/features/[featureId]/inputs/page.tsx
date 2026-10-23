@@ -18,6 +18,7 @@ export default async function InputsPage({
       <nav>
         <Link href="/">← {board.name}</Link>
         <span className="spacer" />
+        <Link href={`/boards/${boardId}/features/${featureId}/spec`}>spec 보기</Link>
         {role === "ADMIN" && <Link href={`/boards/${boardId}/features/${featureId}/inputs/pending`}>승인 대기</Link>}
         <span className="badge">{role}</span>
       </nav>

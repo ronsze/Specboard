@@ -10,6 +10,9 @@ export function InputCard({ input, actions }: { input: InputDto; actions?: React
         <span className={`badge ${input.status}`}>{STATUS_LABEL[input.status]}</span>
         <span className="badge">{KIND_LABEL[input.kind]}</span>
         {input.autoApproved && <span className="badge">자동 승인</span>}
+        {input.status === "APPROVED" && (
+          <span className="badge">{input.reflectedInSpec ? "spec 반영됨" : "반영 대기"}</span>
+        )}
       </div>
       <pre>{input.content}</pre>
       <div className="meta">

@@ -2,6 +2,8 @@ import type { Input, InputStatus } from "@prisma/client";
 import type { ZodType } from "zod";
 import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
+import { assertFeatureInBoard } from "@/server/services/feature-access";
+import { scheduleSpecUpdate } from "@/server/services/spec-jobs";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { inputCreateSchema, inputRejectSchema, inputStatusSchema, type InputCreate } from "@/lib/schemas/input";
 
@@ -19,6 +21,8 @@ export type InputDto = {
   decidedByName: string | null;
   decidedAt: string | null;
   rejectionReason: string | null;
+  /** 승인된 입력이 spec 버전에 반영되었는지 (승인 전·반려는 false) */
+  reflectedInSpec: boolean;
 };
 
 export function toDto(i: Input): InputDto {
@@ -34,6 +38,7 @@ export function toDto(i: Input): InputDto {
     decidedByName: i.decidedByName,
     decidedAt: i.decidedAt?.toISOString() ?? null,
     rejectionReason: i.rejectionReason,
+    reflectedInSpec: i.consumedAt !== null,
   };
 }
 
@@ -41,14 +46,6 @@ export function parse<T>(schema: ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) throw new ValidationError(result.error.issues[0]?.message ?? "잘못된 요청입니다.");
   return result.data;
-}
-
-async function assertFeatureInBoard(boardId: string, featureId: string) {
-  const feature = await db.feature.findFirst({
-    where: { id: featureId, project: { boardId } },
-    select: { id: true },
-  });
-  if (!feature) throw new NotFoundError("feature를 찾을 수 없습니다.");
 }
 
 /** 멤버는 PENDING으로, 관리자는 자동 승인(APPROVED)으로 저장한다. */
@@ -81,6 +78,7 @@ export async function submitInput(
       }),
     },
   });
+  if (autoApprove) await scheduleSpecUpdate(featureId);
   return toDto(input);
 }
 
@@ -134,8 +132,10 @@ async function decide(
   return toDto(await db.input.findUniqueOrThrow({ where: { id: inputId } }));
 }
 
-export function approveInput(user: Actor, boardId: string, inputId: string) {
-  return decide(user, boardId, inputId, { status: "APPROVED" });
+export async function approveInput(user: Actor, boardId: string, inputId: string) {
+  const approved = await decide(user, boardId, inputId, { status: "APPROVED" });
+  await scheduleSpecUpdate(approved.featureId);
+  return approved;
 }
 
 export async function rejectInput(user: Actor, boardId: string, inputId: string, payload: unknown) {
