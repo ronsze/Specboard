@@ -13,6 +13,10 @@ async function main() {
     { email: "viewer@specboard.local", displayName: "열람자", role: "VIEWER" as const },
   ];
 
+  if (await db.board.findFirst({ where: { name: "Specboard 팀" } })) {
+    console.log("이미 시드가 적용되어 있습니다.");
+    return;
+  }
   const board = await db.board.create({ data: { name: "Specboard 팀" } });
   for (const u of users) {
     const user = await db.user.upsert({

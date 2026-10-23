@@ -4,12 +4,12 @@
 - Node.js 22 이상, Docker(PostgreSQL 16 컨테이너용)
 - 시드 데이터: 보드 1개, 관리자·멤버·열람자 계정 각 1개, feature 1개 (이번 범위는 가입 기능이 없어 시드 계정만 사용)
 
-## 실행 (구현 후)
-1. DB 기동과 마이그레이션, 시드 적용
-2. 개발 서버 실행
-3. 테스트: 통합 테스트(Vitest) → E2E(Playwright)
-
-구체 명령은 구현 단계에서 `package.json` 스크립트로 확정하고 이 문서에 반영한다.
+## 실행
+1. `npm install`, `cp .env.example .env`
+2. `npm run db:up` (PostgreSQL 컨테이너, 호스트 포트 5433), `npm run db:migrate`, `npm run db:seed`
+3. `npm run dev` 후 http://localhost:3000 접속. 시드 계정(비밀번호 모두 `specboard123`): `admin@specboard.local`, `member@specboard.local`, `viewer@specboard.local`
+4. 통합·단위 테스트: `npm test` (별도 `specboard_test` DB를 자동 생성하므로 개발 DB를 지우지 않는다)
+5. E2E: 개발 DB에 시드가 적용된 상태에서 `npm run test:e2e` (처음 한 번 `npx playwright install chromium`)
 
 ## 검증 시나리오
 
