@@ -5,6 +5,7 @@ import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
 import { allocateInputNumber } from "@/server/services/numbering";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { scheduleSpecUpdate } from "@/server/services/spec-jobs";
+import { scheduleConflictCheck } from "@/server/services/conflict-checks";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { inputCreateSchema, inputRejectSchema, inputStatusSchema, type InputCreate } from "@/lib/schemas/input";
 
@@ -95,6 +96,7 @@ export async function submitInput(
     });
   });
   if (autoApprove) await scheduleSpecUpdate(featureId);
+  else await scheduleConflictCheck(input.id);
   return toDto(input);
 }
 

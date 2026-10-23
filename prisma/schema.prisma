@@ -99,6 +99,8 @@ model Input {
   itemSources       SpecItemSource[]
   questionSources   OpenQuestionSource[]
   resolvedQuestions OpenQuestion[]       @relation("questionResolver")
+  conflictChecks    ConflictCheck[]
+  conflictWarnings  ConflictWarning[]
   submitter         User?                @relation("submitter", fields: [submittedBy], references: [id], onDelete: SetNull)
   decider           User?                @relation("decider", fields: [decidedBy], references: [id], onDelete: SetNull)
 
@@ -238,4 +240,59 @@ model SpecJob {
   feature    Feature   @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@index([featureId, status])
+}
+
+enum ConflictStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  SKIPPED
+}
+
+/// 입력 하나에 대한 충돌 검사 한 번의 기록이자 작업 큐 행.
+model ConflictCheck {
+  id                String            @id @default(cuid())
+  inputId           String
+  boardId           String
+  featureId         String
+  status            ConflictStatus    @default(QUEUED)
+  skipReason        String?
+  lastError         String?
+  attempts          Int               @default(0)
+  baseVersionNumber Int?
+  model             String?
+  leaseUntil        DateTime?
+  runAfter          DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  completedAt       DateTime?
+  input             Input             @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  warnings          ConflictWarning[]
+
+  @@index([boardId, status])
+  @@index([inputId, createdAt])
+}
+
+model ConflictWarning {
+  id                 String        @id @default(cuid())
+  checkId            String
+  inputId            String
+  itemKey            String
+  itemKind           SpecItemKind
+  itemNumber         Int
+  itemText           String
+  onFinalizedSpec    Boolean
+  reason             String
+  quoteStart         Int?
+  quoteEnd           Int?
+  acknowledgedAt     DateTime?
+  acknowledgedBy     String?
+  acknowledgedByName String?
+  createdAt          DateTime      @default(now())
+  check              ConflictCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  input              Input         @relation(fields: [inputId], references: [id], onDelete: Cascade)
+
+  @@unique([checkId, itemKey])
+  @@index([inputId])
 }
