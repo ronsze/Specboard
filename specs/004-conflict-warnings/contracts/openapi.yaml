@@ -1,0 +1,116 @@
+openapi: 3.1.0
+info:
+  title: Specboard - 충돌 경고 (001~003 계약에 대한 증분)
+  version: 0.1.0
+  description: >
+    경고와 검사 상태는 관리자에게만 제공된다. 비관리자 응답에는 `conflict` 필드가 존재하지 않는다.
+servers:
+  - url: /api
+security:
+  - session: []
+paths:
+  /boards/{boardId}/pending:
+    parameters: [{$ref: '#/components/parameters/boardId'}]
+    get:
+      summary: (변경) 보드 단위 승인 대기. 각 입력에 conflict가 추가된다 (ADMIN 전용 API)
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/PendingInputWithConflict'}}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /boards/{boardId}/features/{featureId}/inputs/view:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/featureId'}]
+    get:
+      summary: (변경) 입력 뷰. ADMIN이 호출할 때만 각 입력에 conflict가 포함된다 (그 외 역할에는 필드 없음)
+      responses:
+        '200': {description: OK}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /boards/{boardId}/conflict-warnings/{warningId}/acknowledge:
+    parameters:
+      - {$ref: '#/components/parameters/boardId'}
+      - {name: warningId, in: path, required: true, schema: {type: string}}
+    post:
+      summary: 경고 확인(닫기) (ADMIN). 멱등. 입력의 승인·반려 상태에는 영향이 없다
+      responses:
+        '200': {description: 확인된 경고, content: {application/json: {schema: {$ref: '#/components/schemas/Warning'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {description: 없는 경고 또는 다른 보드의 경고}
+  /boards/{boardId}/inputs/{inputId}/conflict-check/retry:
+    parameters:
+      - {$ref: '#/components/parameters/boardId'}
+      - {name: inputId, in: path, required: true, schema: {type: string}}
+    post:
+      summary: 실패한 검사 다시 시도 (ADMIN). 새 검사 기록이 만들어지고 이전 기록은 보존된다
+      responses:
+        '202': {description: 검사 등록됨}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {description: 없는 입력}
+        '409':
+          description: 다시 검사할 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: {type: string}
+                  code: {type: string, enum: [NOT_FAILED, ALREADY_RUNNING, INPUT_PROCESSED]}
+components:
+  securitySchemes:
+    session: {type: apiKey, in: cookie, name: session}
+  parameters:
+    boardId: {name: boardId, in: path, required: true, schema: {type: string}}
+    featureId: {name: featureId, in: path, required: true, schema: {type: string}}
+  responses:
+    Forbidden: {description: 권한 없음 또는 보드 비멤버}
+  schemas:
+    Warning:
+      type: object
+      properties:
+        id: {type: string}
+        itemKey: {type: string}
+        label: {type: string, description: 'D-1, R-2 형식'}
+        kind: {type: string, enum: [DECISION, REQUIREMENT]}
+        itemText: {type: string, description: 경고를 만든 시점의 항목 문구}
+        onFinalizedSpec: {type: boolean, description: 확정된 spec의 항목과의 충돌인가}
+        reason: {type: string, maxLength: 200}
+        quote:
+          oneOf:
+            - type: object
+              properties:
+                start: {type: integer, minimum: 0}
+                end: {type: integer}
+            - type: 'null'
+          description: 입력 원문에서 강조할 구간. 원문에 없으면 null
+        acknowledged:
+          oneOf:
+            - type: object
+              properties:
+                byName: {type: string}
+                at: {type: string, format: date-time}
+            - type: 'null'
+    ConflictView:
+      type: object
+      properties:
+        state: {type: string, enum: [CHECKING, DONE, FAILED, SKIPPED]}
+        skipReason: {type: [string, 'null'], enum: [NO_SPEC, NO_ITEMS, null]}
+        failure:
+          oneOf:
+            - type: object
+              properties:
+                code: {type: string, enum: [REFUSED, INVALID_OUTPUT, API_ERROR, TIMEOUT, TOO_LARGE]}
+                attempts: {type: integer}
+            - type: 'null'
+        warnings: {type: array, maxItems: 5, items: {$ref: '#/components/schemas/Warning'}}
+        unacknowledgedCount: {type: integer}
+        checkedAt: {type: [string, 'null'], format: date-time}
+        processedAs: {type: [string, 'null'], enum: [APPROVED, REJECTED, null]}
+    PendingInputWithConflict:
+      allOf:
+        - {$ref: '#/components/schemas/Input'}
+        - type: object
+          properties:
+            conflict:
+              oneOf:
+                - {$ref: '#/components/schemas/ConflictView'}
+                - type: 'null'
+    Input:
+      type: object
+      description: 003의 Input 스키마 (생략)
