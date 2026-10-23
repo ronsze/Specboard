@@ -24,7 +24,7 @@ description: "디자인 시안 적용 구현 태스크"
 
 ## Phase 1: Setup
 
-- [ ] T001 `@axe-core/playwright`를 devDependency로 추가한다(테스트 전용, 런타임 UI 라이브러리는 추가하지 않는다)
+- [X] T001 `@axe-core/playwright`를 devDependency로 추가한다(테스트 전용, 런타임 UI 라이브러리는 추가하지 않는다)
 
 ---
 
@@ -34,24 +34,24 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### 번호와 스키마
 
-- [ ] T002 `prisma/schema.prisma`를 변경한다: `Board.inputSeq Int @default(0)`, `Input.boardId String`과 `Input.number Int`(유니크 `(boardId, number)`, 인덱스 `(boardId, status, submittedAt)`), `Spec.decisionSeq Int @default(0)`, `Spec.requirementSeq Int @default(0)`, `Spec.questionSeq Int @default(0)`, `SpecItem.number Int`(유니크 `(versionId, kind, number)`), `OpenQuestion.number Int`(유니크 `(versionId, number)`), `SpecItemSource.quoteStart Int?`·`quoteEnd Int?`, `OpenQuestionSource.quoteStart Int?`·`quoteEnd Int?`
-- [ ] T003 마이그레이션을 `--create-only`로 생성하고 SQL을 직접 편집한다: 새 컬럼을 nullable로 추가 → `Input.boardId`를 feature→project→board에서 채움 → 보드별 `row_number() OVER (PARTITION BY boardId ORDER BY submittedAt, id)`로 `Input.number` 부여 후 `Board.inputSeq`를 최댓값으로 설정 → spec별로 `(key, kind)` 쌍의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 `SpecItem.number`를 부여해 같은 `(key, kind)`의 모든 버전 행에 복사하고(002에는 종류 변경 금지 규칙이 없어 종류가 바뀐 key는 종류별로 번호를 받는다) `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정, 질문은 key의 최초 등장 순서로 `OpenQuestion.number`를 부여하고 `Spec.questionSeq`를 최댓값으로 설정 → NOT NULL과 유니크 제약 적용. 기존 입력·항목·출처·버전의 내용은 변경하지 않는다 (FR-013)
-- [ ] T004 [P] `scripts/verify-numbering.ts`에 개발 DB 점검 스크립트를 작성한다: 보드별 입력 번호 중복·누락 0, 버전 전체에서 같은 key의 번호 일치, 종류별 항목 번호와 질문 번호 중복 0, `Board.inputSeq`·`Spec.*Seq`가 최댓값과 일치함, **종류가 바뀐 key의 수**를 출력(시나리오 1). `package.json`에 `db:verify-numbering` 스크립트를 추가한다
-- [ ] T005 마이그레이션을 개발 DB에 적용하고 `npm run db:verify-numbering`으로 backfill을 확인한다(001·002로 쌓인 데이터 사용). 테스트 DB는 `tests/global-setup.ts`의 `migrate deploy`로 갱신된다
-- [ ] T006 [P] `src/lib/labels.ts`에 `inputLabel(n)`(`IN-n`), `itemLabel(kind, n)`(결정 `D-n`, 요구사항 `R-n`), `questionLabel(number)`(`Q-n`)를 만들고 `tests/unit/labels.test.ts`로 검증한다
-- [ ] T007 [P] `tests/integration/numbering.test.ts`에 실패 테스트를 작성한다: 같은 보드에서 입력 20개를 동시에 제출해도 `(boardId, number)`가 1..20으로 중복·결번 없음, 제출이 검증 실패로 롤백되면 번호가 소비되지 않음, 보드가 다르면 번호가 각각 1부터 시작함 (FR-010)
-- [ ] T008 `src/server/services/numbering.ts`에 `allocateInputNumber(tx, boardId)`(`UPDATE "Board" SET "inputSeq" = "inputSeq" + 1 ... RETURNING`)를 구현하고, `src/server/services/inputs.ts`의 `submitInput`이 입력 생성과 같은 트랜잭션에서 `boardId`·`number`를 설정하도록 바꿔 T007을 통과시킨다
-- [ ] T009 [P] `tests/unit/validate-output.test.ts`에 "기존 key의 `kind` 변경 거부" 케이스를 추가하고 `src/server/ai/validate-output.ts`가 이를 거부하도록 한다 (FR-011)
-- [ ] T010 `src/server/services/numbering.ts`에 `allocateItemNumber(tx, specId, kind)`와 `allocateQuestionNumber(tx, specId)`를 추가하고, `src/server/services/spec-jobs.ts`의 버전 저장(새 key에만 번호 부여, 기존 key는 이전 버전의 번호를 복사)과 `src/server/services/spec.ts`의 `revertSpec`(번호 그대로 복사)이 `SpecItem.number`와 `OpenQuestion.number`를 채우도록 수정한다. 기존 002 통합 테스트가 모두 통과해야 한다
-- [ ] T011 [P] `tests/integration/spec-numbering.test.ts`에 항목·질문 번호 테스트를 작성한다: 질문도 1부터 증가하고 해소되어도 번호 유지, 결정·요구사항이 종류별로 1부터 증가, 문구가 바뀌어도 번호 유지, 새 버전에서 같은 key는 같은 번호, 되돌리기 후에도 번호 유지, 삭제된 항목의 번호는 재사용되지 않음 (FR-011)
+- [X] T002 `prisma/schema.prisma`를 변경한다: `Board.inputSeq Int @default(0)`, `Input.boardId String`과 `Input.number Int`(유니크 `(boardId, number)`, 인덱스 `(boardId, status, submittedAt)`), `Spec.decisionSeq Int @default(0)`, `Spec.requirementSeq Int @default(0)`, `Spec.questionSeq Int @default(0)`, `SpecItem.number Int`(유니크 `(versionId, kind, number)`), `OpenQuestion.number Int`(유니크 `(versionId, number)`), `SpecItemSource.quoteStart Int?`·`quoteEnd Int?`, `OpenQuestionSource.quoteStart Int?`·`quoteEnd Int?`
+- [X] T003 마이그레이션을 `--create-only`로 생성하고 SQL을 직접 편집한다: 새 컬럼을 nullable로 추가 → `Input.boardId`를 feature→project→board에서 채움 → 보드별 `row_number() OVER (PARTITION BY boardId ORDER BY submittedAt, id)`로 `Input.number` 부여 후 `Board.inputSeq`를 최댓값으로 설정 → spec별로 `(key, kind)` 쌍의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 `SpecItem.number`를 부여해 같은 `(key, kind)`의 모든 버전 행에 복사하고(002에는 종류 변경 금지 규칙이 없어 종류가 바뀐 key는 종류별로 번호를 받는다) `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정, 질문은 key의 최초 등장 순서로 `OpenQuestion.number`를 부여하고 `Spec.questionSeq`를 최댓값으로 설정 → NOT NULL과 유니크 제약 적용. 기존 입력·항목·출처·버전의 내용은 변경하지 않는다 (FR-013)
+- [X] T004 [P] `scripts/verify-numbering.ts`에 개발 DB 점검 스크립트를 작성한다: 보드별 입력 번호 중복·누락 0, 버전 전체에서 같은 key의 번호 일치, 종류별 항목 번호와 질문 번호 중복 0, `Board.inputSeq`·`Spec.*Seq`가 최댓값과 일치함, **종류가 바뀐 key의 수**를 출력(시나리오 1). `package.json`에 `db:verify-numbering` 스크립트를 추가한다
+- [X] T005 마이그레이션을 개발 DB에 적용하고 `npm run db:verify-numbering`으로 backfill을 확인한다(001·002로 쌓인 데이터 사용). 테스트 DB는 `tests/global-setup.ts`의 `migrate deploy`로 갱신된다
+- [X] T006 [P] `src/lib/labels.ts`에 `inputLabel(n)`(`IN-n`), `itemLabel(kind, n)`(결정 `D-n`, 요구사항 `R-n`), `questionLabel(number)`(`Q-n`)를 만들고 `tests/unit/labels.test.ts`로 검증한다
+- [X] T007 [P] `tests/integration/numbering.test.ts`에 실패 테스트를 작성한다: 같은 보드에서 입력 20개를 동시에 제출해도 `(boardId, number)`가 1..20으로 중복·결번 없음, 제출이 검증 실패로 롤백되면 번호가 소비되지 않음, 보드가 다르면 번호가 각각 1부터 시작함 (FR-010)
+- [X] T008 `src/server/services/numbering.ts`에 `allocateInputNumber(tx, boardId)`(`UPDATE "Board" SET "inputSeq" = "inputSeq" + 1 ... RETURNING`)를 구현하고, `src/server/services/inputs.ts`의 `submitInput`이 입력 생성과 같은 트랜잭션에서 `boardId`·`number`를 설정하도록 바꿔 T007을 통과시킨다
+- [X] T009 [P] `tests/unit/validate-output.test.ts`에 "기존 key의 `kind` 변경 거부" 케이스를 추가하고 `src/server/ai/validate-output.ts`가 이를 거부하도록 한다 (FR-011)
+- [X] T010 `src/server/services/numbering.ts`에 `allocateItemNumber(tx, specId, kind)`와 `allocateQuestionNumber(tx, specId)`를 추가하고, `src/server/services/spec-jobs.ts`의 버전 저장(새 key에만 번호 부여, 기존 key는 이전 버전의 번호를 복사)과 `src/server/services/spec.ts`의 `revertSpec`(번호 그대로 복사)이 `SpecItem.number`와 `OpenQuestion.number`를 채우도록 수정한다. 기존 002 통합 테스트가 모두 통과해야 한다
+- [X] T011 [P] `tests/integration/spec-numbering.test.ts`에 항목·질문 번호 테스트를 작성한다: 질문도 1부터 증가하고 해소되어도 번호 유지, 결정·요구사항이 종류별로 1부터 증가, 문구가 바뀌어도 번호 유지, 새 버전에서 같은 key는 같은 번호, 되돌리기 후에도 번호 유지, 삭제된 항목의 번호는 재사용되지 않음 (FR-011)
 
 ### 공용 계산
 
-- [ ] T012 [P] `tests/unit/spec-status.test.ts`에 `deriveSpecStatus` 테스트를 작성한다: 확정 > 갱신 중 > 실패(반영 대기 입력이 있을 때만) > 입력 없음(`NONE`) > `IDLE` 우선순위
-- [ ] T013 `src/server/services/spec-status.ts`에 `deriveSpecStatus`를 구현하고 `src/server/services/spec.ts`의 `getSpec`이 이를 사용하도록 리팩터링해 T012와 기존 `spec-status.test.ts`를 통과시킨다
-- [ ] T014 [P] `tests/unit/spec-provenance.test.ts`에 변경 버전 계산 테스트를 작성한다: 처음 등장 버전, 문구가 달라진 가장 최근 버전, 바뀌지 않으면 처음 버전, 항목이 사라졌다가 되돌리기로 복원되면 그 되돌림 버전이 마지막 변경, 최신 버전 기준 `ADDED`·`CHANGED`·`NONE` 판정, 질문이 처음 RESOLVED가 된 버전(`resolvedInVersion`, 열린 질문은 null, 되돌리기로 다시 열리면 null)
-- [ ] T015 `src/server/services/spec-provenance.ts`에 `computeProvenance(rows)`를 구현한다(spec의 전 버전 항목을 `(key, text, versionNumber)`로 한 번에 읽어 key별 `firstVersion`·`lastChangedVersion` 계산, 질문은 `(key, status, versionNumber)`로 `resolvedInVersion` 계산)해 T014를 통과시킨다
-- [ ] T016 [P] `src/lib/errors.ts`의 `AppError`가 응답 본문에 `code`와 부가 데이터를 실을 수 있도록 확장하고 `toErrorResponse`가 이를 직렬화한다(`PREVIEW_CHANGED` 등에 사용). 기존 오류 응답 형식은 유지한다
+- [X] T012 [P] `tests/unit/spec-status.test.ts`에 `deriveSpecStatus` 테스트를 작성한다: 확정 > 갱신 중 > 실패(반영 대기 입력이 있을 때만) > 입력 없음(`NONE`) > `IDLE` 우선순위
+- [X] T013 `src/server/services/spec-status.ts`에 `deriveSpecStatus`를 구현하고 `src/server/services/spec.ts`의 `getSpec`이 이를 사용하도록 리팩터링해 T012와 기존 `spec-status.test.ts`를 통과시킨다
+- [X] T014 [P] `tests/unit/spec-provenance.test.ts`에 변경 버전 계산 테스트를 작성한다: 처음 등장 버전, 문구가 달라진 가장 최근 버전, 바뀌지 않으면 처음 버전, 항목이 사라졌다가 되돌리기로 복원되면 그 되돌림 버전이 마지막 변경, 최신 버전 기준 `ADDED`·`CHANGED`·`NONE` 판정, 질문이 처음 RESOLVED가 된 버전(`resolvedInVersion`, 열린 질문은 null, 되돌리기로 다시 열리면 null)
+- [X] T015 `src/server/services/spec-provenance.ts`에 `computeProvenance(rows)`를 구현한다(spec의 전 버전 항목을 `(key, text, versionNumber)`로 한 번에 읽어 key별 `firstVersion`·`lastChangedVersion` 계산, 질문은 `(key, status, versionNumber)`로 `resolvedInVersion` 계산)해 T014를 통과시킨다
+- [X] T016 [P] `src/lib/errors.ts`의 `AppError`가 응답 본문에 `code`와 부가 데이터를 실을 수 있도록 확장하고 `toErrorResponse`가 이를 직렬화한다(`PREVIEW_CHANGED` 등에 사용). 기존 오류 응답 형식은 유지한다
 
 **Checkpoint**: 번호, 상태 판정, 변경 버전 계산, 오류 확장 준비 완료. 001·002 테스트 전부 통과
 

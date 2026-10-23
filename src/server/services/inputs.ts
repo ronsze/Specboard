@@ -2,6 +2,7 @@ import type { Input, InputStatus } from "@prisma/client";
 import type { ZodType } from "zod";
 import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
+import { allocateInputNumber } from "@/server/services/numbering";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { scheduleSpecUpdate } from "@/server/services/spec-jobs";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
@@ -11,6 +12,7 @@ type Actor = { id: string; displayName: string };
 
 export type InputDto = {
   id: string;
+  number: number;
   featureId: string;
   kind: Input["kind"];
   content: string;
@@ -28,6 +30,7 @@ export type InputDto = {
 export function toDto(i: Input): InputDto {
   return {
     id: i.id,
+    number: i.number,
     featureId: i.featureId,
     kind: i.kind,
     content: i.content,
@@ -61,22 +64,27 @@ export async function submitInput(
 
   const now = new Date();
   const autoApprove = role === "ADMIN";
-  const input = await db.input.create({
-    data: {
-      featureId,
-      kind: data.kind,
-      content: data.content,
-      submittedBy: user.id,
-      submitterName: user.displayName,
-      submittedAt: now,
-      ...(autoApprove && {
-        status: "APPROVED",
-        autoApproved: true,
-        decidedBy: user.id,
-        decidedByName: user.displayName,
-        decidedAt: now,
-      }),
-    },
+  const input = await db.$transaction(async (tx) => {
+    const number = await allocateInputNumber(tx, boardId);
+    return tx.input.create({
+      data: {
+        boardId,
+        number,
+        featureId,
+        kind: data.kind,
+        content: data.content,
+        submittedBy: user.id,
+        submitterName: user.displayName,
+        submittedAt: now,
+        ...(autoApprove && {
+          status: "APPROVED",
+          autoApproved: true,
+          decidedBy: user.id,
+          decidedByName: user.displayName,
+          decidedAt: now,
+        }),
+      },
+    });
   });
   if (autoApprove) await scheduleSpecUpdate(featureId);
   return toDto(input);

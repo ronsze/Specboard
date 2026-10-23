@@ -13,6 +13,7 @@ import {
 } from "@/server/ai/spec-writer";
 import { validateSpecOutput } from "@/server/ai/validate-output";
 import { getSpecWriter } from "@/server/ai";
+import { allocateItemNumber, allocateQuestionNumber } from "@/server/services/numbering";
 
 export const MAX_BATCH_INPUTS = 20;
 export const MAX_BATCH_CHARS = 150_000;
@@ -214,7 +215,11 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
         inputs: { create: [...batchIds].map((inputId) => ({ inputId })) },
       },
     });
+    // 기존 key는 직전 버전의 번호를 그대로 쓰고, 새 key에만 새 번호를 부여한다 (안정 번호)
+    const itemNumbers = new Map((base?.items ?? []).map((i) => [i.key, i.number]));
+    const questionNumbers = new Map((base?.questions ?? []).map((q) => [q.key, q.number]));
     for (const [position, item] of output.items.entries()) {
+      const number = itemNumbers.get(item.key!) ?? (await allocateItemNumber(tx, target.id, item.kind));
       await tx.specItem.create({
         data: {
           versionId: version.id,
@@ -222,11 +227,13 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
           kind: item.kind,
           text: item.text,
           position,
+          number,
           sources: { create: [...new Set(item.sourceInputIds)].map((inputId) => ({ inputId })) },
         },
       });
     }
     for (const [position, q] of output.questions.entries()) {
+      const number = questionNumbers.get(q.key!) ?? (await allocateQuestionNumber(tx, target.id));
       await tx.openQuestion.create({
         data: {
           versionId: version.id,
@@ -235,6 +242,7 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
           status: q.status,
           resolvedByInputId: q.resolvedByInputId,
           position,
+          number,
           sources: { create: [...new Set(q.sourceInputIds)].map((inputId) => ({ inputId })) },
         },
       });

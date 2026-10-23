@@ -2,6 +2,8 @@ export class AppError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** 응답 본문에 함께 실을 오류 코드(예: PREVIEW_CHANGED)와 부가 데이터 */
+    readonly details?: { code?: string } & Record<string, unknown>,
   ) {
     super(message);
   }
@@ -26,14 +28,14 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(409, message);
+  constructor(message: string, details?: AppError["details"]) {
+    super(409, message, details);
   }
 }
 
 export function toErrorResponse(error: unknown): Response {
   if (error instanceof AppError) {
-    return Response.json({ error: error.message }, { status: error.status });
+    return Response.json({ error: error.message, ...error.details }, { status: error.status });
   }
   console.error(error);
   return Response.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });

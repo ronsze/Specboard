@@ -4,6 +4,7 @@ import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { recoverStaleJobs, scheduleSpecUpdate, unconsumedApproved } from "@/server/services/spec-jobs";
 import { diffVersions, type Diff } from "@/server/services/spec-diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
+import { deriveSpecStatus, type SpecStatus } from "@/server/services/spec-status";
 import { Prisma } from "@prisma/client";
 import { parse } from "@/server/services/inputs";
 import { revertSchema } from "@/lib/schemas/spec";
@@ -14,8 +15,6 @@ import {
   type VersionDetail,
   type VersionSummary,
 } from "@/server/services/spec-view";
-
-export type SpecStatus = "NONE" | "IDLE" | "UPDATING" | "FAILED" | "FINALIZED";
 
 export type SpecView = {
   status: SpecStatus;
@@ -58,20 +57,27 @@ export async function getSpec(
     version,
   };
 
-  if (spec?.finalizedAt) {
-    return { ...base, status: "FINALIZED", message: pendingInputCount > 0 ? `확정 상태입니다. 반영 대기 입력 ${pendingInputCount}개는 확정을 해제하면 반영됩니다.` : null };
-  }
   const activeJob = await db.specJob.findFirst({ where: { featureId, status: { in: ["QUEUED", "RUNNING"] } } });
-  if (activeJob) return { ...base, status: "UPDATING", message: "AI가 spec을 갱신하고 있습니다." };
-
   const latestJob = await db.specJob.findFirst({ where: { featureId }, orderBy: { createdAt: "desc" } });
-  if (latestJob?.status === "FAILED" && pendingInputCount > 0) {
-    return { ...base, status: "FAILED", message: FAILURE_MESSAGES[latestJob.lastError ?? ""] ?? "spec 갱신에 실패했습니다." };
-  }
-  if (!version && pendingInputCount === 0) {
-    return { ...base, status: "NONE", message: "승인된 입력이 아직 없습니다." };
-  }
-  return { ...base, status: "IDLE", message: null };
+  const status = deriveSpecStatus({
+    finalized: Boolean(spec?.finalizedAt),
+    activeJob: Boolean(activeJob),
+    latestJobFailed: latestJob?.status === "FAILED",
+    pendingCount: pendingInputCount,
+    hasVersion: Boolean(version),
+  });
+
+  const messages: Record<SpecStatus, string | null> = {
+    FINALIZED:
+      pendingInputCount > 0
+        ? `확정 상태입니다. 반영 대기 입력 ${pendingInputCount}개는 확정을 해제하면 반영됩니다.`
+        : null,
+    UPDATING: "AI가 spec을 갱신하고 있습니다.",
+    FAILED: FAILURE_MESSAGES[latestJob?.lastError ?? ""] ?? "spec 갱신에 실패했습니다.",
+    NONE: "승인된 입력이 아직 없습니다.",
+    IDLE: null,
+  };
+  return { ...base, status, message: messages[status] };
 }
 
 async function readableSpec(user: { id: string }, boardId: string, featureId: string) {
@@ -197,6 +203,7 @@ export async function revertSpec(
           kind: item.kind,
           text: item.text,
           position: item.position,
+          number: item.number,
           sources: { create: item.sources.map((s) => ({ inputId: s.inputId })) },
         },
       });
@@ -210,6 +217,7 @@ export async function revertSpec(
           status: q.status,
           resolvedByInputId: q.resolvedByInputId,
           position: q.position,
+          number: q.number,
           sources: { create: q.sources.map((s) => ({ inputId: s.inputId })) },
         },
       });

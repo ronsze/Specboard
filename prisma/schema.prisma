@@ -39,6 +39,8 @@ model User {
 model Board {
   id          String       @id @default(cuid())
   name        String
+  inputSeq    Int          @default(0)
+  inputs      Input[]
   createdAt   DateTime     @default(now())
   memberships Membership[]
   projects    Project[]
@@ -89,6 +91,9 @@ model Input {
   rejectionReason   String?
   consumedAt        DateTime?
   consumedVersionId String?
+  boardId           String
+  number            Int
+  board             Board                @relation(fields: [boardId], references: [id], onDelete: Cascade)
   feature           Feature              @relation(fields: [featureId], references: [id], onDelete: Cascade)
   versionLinks      SpecVersionInput[]
   itemSources       SpecItemSource[]
@@ -97,7 +102,9 @@ model Input {
   submitter         User?                @relation("submitter", fields: [submittedBy], references: [id], onDelete: SetNull)
   decider           User?                @relation("decider", fields: [decidedBy], references: [id], onDelete: SetNull)
 
+  @@unique([boardId, number])
   @@index([featureId, status])
+  @@index([boardId, status, submittedAt])
 }
 
 enum SpecVersionKind {
@@ -129,6 +136,9 @@ model Spec {
   finalizedAt      DateTime?
   finalizedBy      String?
   finalizedByName  String?
+  decisionSeq      Int           @default(0)
+  requirementSeq   Int           @default(0)
+  questionSeq      Int           @default(0)
   createdAt        DateTime      @default(now())
   feature          Feature       @relation(fields: [featureId], references: [id], onDelete: Cascade)
   versions         SpecVersion[]
@@ -168,17 +178,21 @@ model SpecItem {
   kind      SpecItemKind
   text      String
   position  Int
+  number    Int
   version   SpecVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
   sources   SpecItemSource[]
 
+  @@unique([versionId, kind, number])
   @@index([versionId])
 }
 
 model SpecItemSource {
-  itemId  String
-  inputId String
-  item    SpecItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  input   Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
+  itemId     String
+  inputId    String
+  quoteStart Int?
+  quoteEnd   Int?
+  item       SpecItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  input      Input    @relation(fields: [inputId], references: [id], onDelete: Cascade)
 
   @@id([itemId, inputId])
 }
@@ -191,16 +205,20 @@ model OpenQuestion {
   status            QuestionStatus
   resolvedByInputId String?
   position          Int
+  number            Int
   version           SpecVersion          @relation(fields: [versionId], references: [id], onDelete: Cascade)
   resolvedBy        Input?               @relation("questionResolver", fields: [resolvedByInputId], references: [id], onDelete: SetNull)
   sources           OpenQuestionSource[]
 
+  @@unique([versionId, number])
   @@index([versionId])
 }
 
 model OpenQuestionSource {
   questionId String
   inputId    String
+  quoteStart Int?
+  quoteEnd   Int?
   question   OpenQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   input      Input        @relation(fields: [inputId], references: [id], onDelete: Cascade)
 

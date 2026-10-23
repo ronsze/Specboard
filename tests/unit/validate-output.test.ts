@@ -111,6 +111,12 @@ describe("validateSpecOutput", () => {
     rejects(q);
   });
 
+  it("기존 항목의 종류(결정/요구사항)를 바꾸는 출력을 거부한다", () => {
+    const o = base();
+    o.items[0] = { key: "k1", kind: "REQUIREMENT", text: "기존 결정", sourceInputIds: ["old1"] };
+    rejects(o);
+  });
+
   it("SpecWriterError를 던진다", () => {
     const o = base();
     o.items[0].sourceInputIds = [];

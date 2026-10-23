@@ -44,6 +44,7 @@ export function validateSpecOutput(
     } else {
       const existing = itemsByKey.get(key);
       if (!existing) throw invalid(`알 수 없는 항목 key입니다: ${key}`);
+      if (existing.kind !== item.kind) throw invalid("기존 항목의 종류(결정/요구사항)는 바꿀 수 없습니다.");
       if (existing.text.trim() !== item.text.trim() && !citesBatch(item.sourceInputIds)) {
         throw invalid("문구가 바뀐 항목은 이번에 반영하는 입력을 인용해야 합니다.");
       }

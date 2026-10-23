@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:live": "vitest run --config vitest.live.config.ts",
     "postinstall": "prisma generate",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:verify-numbering": "tsx scripts/verify-numbering.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -30,6 +31,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.64.1",
     "@types/bcryptjs": "^2.4.6",
