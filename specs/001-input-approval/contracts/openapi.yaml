@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: Specboard - 입력 제출과 관리자 승인
+  version: 0.1.0
+servers:
+  - url: /api
+security:
+  - session: []
+paths:
+  /boards/{boardId}/features/{featureId}/inputs:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/featureId'}]
+    get:
+      summary: 입력 목록 (ADMIN/MEMBER/VIEWER)
+      parameters:
+        - {name: status, in: query, schema: {$ref: '#/components/schemas/InputStatus'}}
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Input'}}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      summary: 입력 제출 (ADMIN/MEMBER). ADMIN은 APPROVED로 저장
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/InputCreate'}}}
+      responses:
+        '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Input'}}}}
+        '400': {$ref: '#/components/responses/ValidationError'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /boards/{boardId}/features/{featureId}/inputs/approved:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/featureId'}]
+    get:
+      summary: AI spec 작성에 사용 가능한 입력 (APPROVED만)
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Input'}}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /boards/{boardId}/features/{featureId}/inputs/pending:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/featureId'}]
+    get:
+      summary: 대기 입력 목록 (ADMIN)
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Input'}}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /boards/{boardId}/inputs/{inputId}/approve:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/inputId'}]
+    post:
+      summary: 승인 (ADMIN)
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/Input'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/AlreadyDecided'}
+  /boards/{boardId}/inputs/{inputId}/reject:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {$ref: '#/components/parameters/inputId'}]
+    post:
+      summary: 반려 (ADMIN, 사유 필수)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 1}}}}}
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/Input'}}}}
+        '400': {$ref: '#/components/responses/ValidationError'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/AlreadyDecided'}
+  /boards/{boardId}/members:
+    parameters: [{$ref: '#/components/parameters/boardId'}]
+    get:
+      summary: 멤버와 역할 목록 (ADMIN)
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Member'}}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    post:
+      summary: 멤버 추가와 역할 지정 (ADMIN)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [email, role], properties: {email: {type: string, format: email}, role: {$ref: '#/components/schemas/Role'}}}}}
+      responses:
+        '201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Member'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {description: 해당 이메일의 사용자 없음}
+        '409': {description: 이미 보드 멤버}
+  /boards/{boardId}/members/{userId}:
+    parameters: [{$ref: '#/components/parameters/boardId'}, {name: userId, in: path, required: true, schema: {type: string}}]
+    patch:
+      summary: 역할 변경 (ADMIN)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [role], properties: {role: {$ref: '#/components/schemas/Role'}}}}}
+      responses:
+        '200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/Member'}}}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {description: 마지막 관리자 강등 불가}
+components:
+  securitySchemes:
+    session: {type: apiKey, in: cookie, name: session}
+  parameters:
+    boardId: {name: boardId, in: path, required: true, schema: {type: string}}
+    featureId: {name: featureId, in: path, required: true, schema: {type: string}}
+    inputId: {name: inputId, in: path, required: true, schema: {type: string}}
+  responses:
+    Forbidden: {description: 권한 없음 또는 보드 비멤버}
+    ValidationError: {description: 입력값 검증 실패 (빈 내용, 길이 초과, 사유 누락)}
+    AlreadyDecided: {description: 이미 승인 또는 반려된 입력}
+  schemas:
+    Role: {type: string, enum: [ADMIN, MEMBER, VIEWER]}
+    InputKind: {type: string, enum: [MEETING_NOTE, IDEA, OPINION]}
+    InputStatus: {type: string, enum: [PENDING, APPROVED, REJECTED]}
+    InputCreate:
+      type: object
+      required: [kind, content]
+      properties:
+        kind: {$ref: '#/components/schemas/InputKind'}
+        content: {type: string, minLength: 1, maxLength: 50000}
+    Input:
+      type: object
+      properties:
+        id: {type: string}
+        featureId: {type: string}
+        kind: {$ref: '#/components/schemas/InputKind'}
+        content: {type: string}
+        status: {$ref: '#/components/schemas/InputStatus'}
+        submitterName: {type: string}
+        submittedAt: {type: string, format: date-time}
+        autoApproved: {type: boolean}
+        decidedByName: {type: [string, 'null']}
+        decidedAt: {type: [string, 'null'], format: date-time}
+        rejectionReason: {type: [string, 'null']}
+    Member:
+      type: object
+      properties:
+        userId: {type: string}
+        displayName: {type: string}
+        email: {type: string}
+        role: {$ref: '#/components/schemas/Role'}
