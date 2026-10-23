@@ -129,15 +129,15 @@ description: "AI spec 생성과 버전 이력 구현 태스크"
 
 ### Tests for User Story 4
 
-- [ ] T040 [P] [US4] `tests/integration/spec-revert.test.ts`에 시나리오 10, 11, 12(되돌리기 → 같은 내용의 새 버전, `kind=REVERT`, `revertedFromNumber`, 실행 관리자 기록, 기존 버전 보존, 입력의 `consumedAt` 불변·재반영 없음, 최신과 같은 내용이면 새 버전 없이 거부, 멤버·열람자·비멤버 403, 없는 버전 404)를 작성한다
-- [ ] T041 [P] [US4] `tests/integration/spec-midflight.test.ts`에 시나리오 20(AI 호출 중에 되돌리기가 일어나면 AI 결과를 폐기하고 입력은 미소비로 남아 재큐, 저장 시 기준 버전 번호가 달라졌음을 감지)을 작성한다
+- [X] T040 [P] [US4] `tests/integration/spec-revert.test.ts`에 시나리오 10, 11, 12(되돌리기 → 같은 내용의 새 버전, `kind=REVERT`, `revertedFromNumber`, 실행 관리자 기록, 기존 버전 보존, 입력의 `consumedAt` 불변·재반영 없음, 최신과 같은 내용이면 새 버전 없이 거부, 멤버·열람자·비멤버 403, 없는 버전 404)를 작성한다
+- [X] T041 [P] [US4] `tests/integration/spec-midflight.test.ts`에 시나리오 20(AI 호출 중에 되돌리기가 일어나면 AI 결과를 폐기하고 입력은 미소비로 남아 재큐, 저장 시 기준 버전 번호가 달라졌음을 감지)을 작성한다
 
 ### Implementation for User Story 4
 
-- [ ] T042 [US4] `src/server/services/spec.ts`에 `revertSpec(user, boardId, featureId, toVersion)`를 구현한다: ADMIN만, feature 락 안에서 확정 여부 확인(확정이면 409와 "먼저 확정을 해제하세요"), 선택 버전과 최신 버전의 항목·질문 내용 비교 후 같으면 거부, 아니면 스냅샷을 복사한 `REVERT` 버전 생성 (FR-014, FR-015, FR-016, FR-020, FR-022)
-- [ ] T043 [US4] `src/server/services/spec-jobs.ts`의 `runSpecJob`(T016) 저장 단계에서 "작업 시작 시 기준 버전 번호와 확정 여부"를 다시 확인해 달라졌으면 결과를 폐기하고 입력을 미소비로 둔 채 재큐하도록 보완한다
-- [ ] T044 [US4] `src/app/api/boards/[boardId]/features/[featureId]/spec/revert/route.ts`를 계약대로 구현한다
-- [ ] T045 [US4] 이력 화면(T039 파일)에 관리자에게만 보이는 "이 버전으로 되돌리기" 버튼(확인 단계 포함, 클릭 세 번 이내)과, 되돌리기 버전의 "버전 N으로 되돌림" 표시를 추가한다 (SC-007)
+- [X] T042 [US4] `src/server/services/spec.ts`에 `revertSpec(user, boardId, featureId, toVersion)`를 구현한다: ADMIN만, feature 락 안에서 확정 여부 확인(확정이면 409와 "먼저 확정을 해제하세요"), 선택 버전과 최신 버전의 항목·질문 내용 비교 후 같으면 거부, 아니면 스냅샷을 복사한 `REVERT` 버전 생성 (FR-014, FR-015, FR-016, FR-020, FR-022)
+- [X] T043 [US4] `src/server/services/spec-jobs.ts`의 `runSpecJob`(T016) 저장 단계에서 "작업 시작 시 기준 버전 번호와 확정 여부"를 다시 확인해 달라졌으면 결과를 폐기하고 입력을 미소비로 둔 채 재큐하도록 보완한다
+- [X] T044 [US4] `src/app/api/boards/[boardId]/features/[featureId]/spec/revert/route.ts`를 계약대로 구현한다
+- [X] T045 [US4] 이력 화면(T039 파일)에 관리자에게만 보이는 "이 버전으로 되돌리기" 버튼(확인 단계 포함, 클릭 세 번 이내)과, 되돌리기 버전의 "버전 N으로 되돌림" 표시를 추가한다 (SC-007)
 
 ---
 
@@ -149,14 +149,14 @@ description: "AI spec 생성과 버전 이력 구현 태스크"
 
 ### Tests for User Story 5
 
-- [ ] T046 [P] [US5] `tests/integration/spec-finalize.test.ts`에 시나리오 13, 14, 15(확정 시 수행자·시각 기록, 확정 중 승인된 입력은 새 버전 없이 반영 대기, 확정 중 되돌리기 409, 해제 시 대기 입력이 승인 순서대로 반영되어 새 버전, 대기 입력이 없으면 해제해도 새 버전 없음, 멤버·열람자 확정·해제 403, 확정할 버전이 없으면 409)를 작성한다
-- [ ] T047 [P] [US5] `tests/integration/spec-finalize-midflight.test.ts`에 AI 호출 중 확정이 일어나면 결과를 폐기하고 입력이 미소비로 남는 케이스를 작성한다
+- [X] T046 [P] [US5] `tests/integration/spec-finalize.test.ts`에 시나리오 13, 14, 15(확정 시 수행자·시각 기록, 확정 중 승인된 입력은 새 버전 없이 반영 대기, 확정 중 되돌리기 409, 해제 시 대기 입력이 승인 순서대로 반영되어 새 버전, 대기 입력이 없으면 해제해도 새 버전 없음, 멤버·열람자 확정·해제 403, 확정할 버전이 없으면 409)를 작성한다
+- [X] T047 [P] [US5] `tests/integration/spec-finalize-midflight.test.ts`에 AI 호출 중 확정이 일어나면 결과를 폐기하고 입력이 미소비로 남는 케이스를 작성한다
 
 ### Implementation for User Story 5
 
-- [ ] T048 [US5] `src/server/services/spec.ts`에 `finalizeSpec`, `unfinalizeSpec`을 구현한다: ADMIN만, feature 락 안에서 상태 전이, 확정 시 수행자·시각 기록, 해제 시 반영 대기 입력이 있으면 `requestSpecUpdate` 호출 (FR-017, FR-018, FR-019, FR-022)
-- [ ] T049 [US5] `src/app/api/boards/[boardId]/features/[featureId]/spec/finalize/route.ts`, `unfinalize/route.ts`를 계약대로 구현한다
-- [ ] T050 [US5] spec 화면(T026 파일)에 확정 상태 배지(확정자·시각), 관리자 전용 확정·해제 버튼, 확정 중 "반영 대기 입력 N개" 안내를 추가한다
+- [X] T048 [US5] `src/server/services/spec.ts`에 `finalizeSpec`, `unfinalizeSpec`을 구현한다: ADMIN만, feature 락 안에서 상태 전이, 확정 시 수행자·시각 기록, 해제 시 반영 대기 입력이 있으면 `requestSpecUpdate` 호출 (FR-017, FR-018, FR-019, FR-022)
+- [X] T049 [US5] `src/app/api/boards/[boardId]/features/[featureId]/spec/finalize/route.ts`, `unfinalize/route.ts`를 계약대로 구현한다
+- [X] T050 [US5] spec 화면(T026 파일)에 확정 상태 배지(확정자·시각), 관리자 전용 확정·해제 버튼, 확정 중 "반영 대기 입력 N개" 안내를 추가한다
 
 ---
 

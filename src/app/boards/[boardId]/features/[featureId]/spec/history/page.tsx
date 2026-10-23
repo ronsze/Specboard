@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { pageContext } from "@/server/auth/page-context";
-import { diff, listVersions } from "@/server/services/spec";
+import { diff, getSpec, listVersions } from "@/server/services/spec";
+import { RevertButton } from "@/components/RevertButton";
 import { db } from "@/server/db/client";
 
 const KIND_LABEL = { AI_UPDATE: "AI 갱신", REVERT: "되돌림" } as const;
@@ -18,6 +19,7 @@ export default async function HistoryPage({
   const q = await searchParams;
   const { user, role } = await pageContext(boardId);
   const versions = await listVersions(user, boardId, featureId);
+  const spec = await getSpec(user, boardId, featureId);
 
   const from = Number(q.from);
   const to = Number(q.to);
@@ -92,6 +94,14 @@ export default async function HistoryPage({
             {v.kind === "REVERT" && <span className="meta">버전 {v.revertedFromNumber}로 되돌림 · {v.createdByName}</span>}
             <span className="meta">{new Date(v.createdAt).toLocaleString("ko-KR")}</span>
           </div>
+          {role === "ADMIN" && v.number !== versions[0].number && (
+            <RevertButton
+              boardId={boardId}
+              featureId={featureId}
+              version={v.number}
+              disabledReason={spec.status === "FINALIZED" ? "확정 상태에서는 되돌릴 수 없습니다. 먼저 확정을 해제하세요." : undefined}
+            />
+          )}
           {v.inputIds.length > 0 && (
             <ul className="meta">
               {v.inputIds.map((id) => (

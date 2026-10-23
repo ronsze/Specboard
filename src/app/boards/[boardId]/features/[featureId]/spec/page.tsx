@@ -5,6 +5,7 @@ import { getSpec } from "@/server/services/spec";
 import { drainSpecJobs } from "@/server/services/spec-jobs";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { RetryButton } from "@/components/RetryButton";
+import { FinalizeButton } from "@/components/FinalizeButton";
 import { SpecItemList } from "@/components/SpecItemList";
 import { OpenQuestionList } from "@/components/OpenQuestionList";
 
@@ -47,6 +48,11 @@ export default async function SpecPage({
       )}
       {spec.pendingInputCount > 0 && spec.status !== "FINALIZED" && (
         <p className="meta">반영 대기 입력 {spec.pendingInputCount}개</p>
+      )}
+      {role === "ADMIN" && spec.version && (spec.status === "IDLE" || spec.status === "FINALIZED") && (
+        <p>
+          <FinalizeButton boardId={boardId} featureId={featureId} finalized={spec.status === "FINALIZED"} />
+        </p>
       )}
       {spec.finalizedAt && (
         <p className="meta">

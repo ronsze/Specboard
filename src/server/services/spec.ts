@@ -1,9 +1,12 @@
 import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
-import { recoverStaleJobs, unconsumedApproved } from "@/server/services/spec-jobs";
+import { recoverStaleJobs, scheduleSpecUpdate, unconsumedApproved } from "@/server/services/spec-jobs";
 import { diffVersions, type Diff } from "@/server/services/spec-diff";
-import { NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError } from "@/lib/errors";
+import { Prisma } from "@prisma/client";
+import { parse } from "@/server/services/inputs";
+import { revertSchema } from "@/lib/schemas/spec";
 import {
   toVersionDetail,
   toVersionSummary,
@@ -123,4 +126,137 @@ export async function diff(
     getVersion(user, boardId, featureId, to),
   ]);
   return diffVersions(a, b);
+}
+
+const lockFeature = (featureId: string) => Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${featureId}))`;
+
+type Snapshot = Prisma.SpecVersionGetPayload<{
+  include: {
+    items: { include: { sources: true } };
+    questions: { include: { sources: true } };
+  };
+}>;
+
+const sorted = (xs: string[]) => [...xs].sort().join(",");
+
+/** 항목·질문 내용(순서 포함)이 같은지 비교한다. */
+function sameContent(a: Snapshot, b: Snapshot): boolean {
+  const items = (v: Snapshot) =>
+    [...v.items].sort((x, y) => x.position - y.position).map((i) => [i.key, i.kind, i.text, sorted(i.sources.map((s) => s.inputId))]);
+  const questions = (v: Snapshot) =>
+    [...v.questions]
+      .sort((x, y) => x.position - y.position)
+      .map((q) => [q.key, q.text, q.status, q.resolvedByInputId, sorted(q.sources.map((s) => s.inputId))]);
+  return (
+    JSON.stringify(items(a)) === JSON.stringify(items(b)) &&
+    JSON.stringify(questions(a)) === JSON.stringify(questions(b))
+  );
+}
+
+/**
+ * 이전 버전으로 되돌린다 (관리자 전용). 선택한 버전과 같은 내용의 새 버전을 만들고 기존 버전은 보존한다.
+ * 확정 상태이거나 최신 버전과 내용이 같으면 거부한다 (FR-014~FR-016, FR-020, FR-022).
+ */
+export async function revertSpec(
+  user: { id: string; displayName: string },
+  boardId: string,
+  featureId: string,
+  toVersion: number,
+): Promise<VersionSummary> {
+  await requireRole(user.id, boardId, ["ADMIN"]);
+  await assertFeatureInBoard(boardId, featureId);
+  const { toVersion: target } = parse(revertSchema, { toVersion });
+
+  return db.$transaction(async (tx) => {
+    await tx.$executeRaw(lockFeature(featureId));
+    const spec = await tx.spec.findUnique({ where: { featureId } });
+    if (!spec) throw new NotFoundError("버전을 찾을 수 없습니다.");
+    if (spec.finalizedAt) throw new ConflictError("확정된 spec은 되돌릴 수 없습니다. 먼저 확정을 해제하세요.");
+
+    const include = { items: { include: { sources: true } }, questions: { include: { sources: true } } } as const;
+    const source = await tx.specVersion.findUnique({ where: { specId_number: { specId: spec.id, number: target } }, include });
+    if (!source) throw new NotFoundError("버전을 찾을 수 없습니다.");
+    const latest = await tx.specVersion.findFirstOrThrow({ where: { specId: spec.id }, orderBy: { number: "desc" }, include });
+    if (sameContent(source, latest)) throw new ConflictError("현재 버전과 같은 내용이라 되돌릴 변화가 없습니다.");
+
+    const created = await tx.specVersion.create({
+      data: {
+        specId: spec.id,
+        number: latest.number + 1,
+        kind: "REVERT",
+        revertedFromNumber: source.number,
+        createdBy: user.id,
+        createdByName: user.displayName,
+      },
+    });
+    for (const item of source.items) {
+      await tx.specItem.create({
+        data: {
+          versionId: created.id,
+          key: item.key,
+          kind: item.kind,
+          text: item.text,
+          position: item.position,
+          sources: { create: item.sources.map((s) => ({ inputId: s.inputId })) },
+        },
+      });
+    }
+    for (const q of source.questions) {
+      await tx.openQuestion.create({
+        data: {
+          versionId: created.id,
+          key: q.key,
+          text: q.text,
+          status: q.status,
+          resolvedByInputId: q.resolvedByInputId,
+          position: q.position,
+          sources: { create: q.sources.map((s) => ({ inputId: s.inputId })) },
+        },
+      });
+    }
+    await tx.spec.update({ where: { id: spec.id }, data: { currentVersionId: created.id } });
+    return toVersionSummary({ ...created, inputs: [] });
+  });
+}
+
+/** spec 확정 (관리자 전용). 확정 중에는 새 입력이 승인되어도 새 버전이 만들어지지 않는다 (FR-017, FR-018). */
+export async function finalizeSpec(
+  user: { id: string; displayName: string },
+  boardId: string,
+  featureId: string,
+): Promise<SpecView> {
+  await requireRole(user.id, boardId, ["ADMIN"]);
+  await assertFeatureInBoard(boardId, featureId);
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw(lockFeature(featureId));
+    const spec = await tx.spec.findUnique({ where: { featureId } });
+    if (!spec?.currentVersionId) throw new ConflictError("확정할 버전이 없습니다.");
+    if (spec.finalizedAt) throw new ConflictError("이미 확정된 spec입니다.");
+    await tx.spec.update({
+      where: { id: spec.id },
+      data: { finalizedAt: new Date(), finalizedBy: user.id, finalizedByName: user.displayName },
+    });
+  });
+  return getSpec(user, boardId, featureId);
+}
+
+/** 확정 해제 (관리자 전용). 반영 대기 입력이 있으면 갱신 작업을 등록한다 (FR-017, FR-019). */
+export async function unfinalizeSpec(
+  user: { id: string },
+  boardId: string,
+  featureId: string,
+): Promise<SpecView> {
+  await requireRole(user.id, boardId, ["ADMIN"]);
+  await assertFeatureInBoard(boardId, featureId);
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw(lockFeature(featureId));
+    const spec = await tx.spec.findUnique({ where: { featureId } });
+    if (!spec?.finalizedAt) throw new ConflictError("확정 상태가 아닙니다.");
+    await tx.spec.update({
+      where: { id: spec.id },
+      data: { finalizedAt: null, finalizedBy: null, finalizedByName: null },
+    });
+  });
+  await scheduleSpecUpdate(featureId);
+  return getSpec(user, boardId, featureId);
 }
