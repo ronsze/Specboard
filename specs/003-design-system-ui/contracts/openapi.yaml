@@ -195,7 +195,8 @@ components:
         key: {type: string}
         text: {type: string}
         status: {type: string, enum: [OPEN, RESOLVED]}
-        label: {type: string, description: 'Q-1 형식(버전 안의 표시 순서)'}
+        number: {type: integer}
+        label: {type: string, description: 'Q-n 형식 (질문 안정 번호)'}
         resolvedInVersion: {type: [integer, 'null']}
         sources: {type: array, items: {$ref: '#/components/schemas/SourceRef'}}
         resolvedBy: {oneOf: [{$ref: '#/components/schemas/SourceRef'}, {type: 'null'}]}

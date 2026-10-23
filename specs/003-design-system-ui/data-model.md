@@ -25,6 +25,7 @@
 |---|---|
 | decisionSeq | 마지막으로 부여한 결정(D) 번호 카운터. 기본 0 |
 | requirementSeq | 마지막으로 부여한 요구사항(R) 번호 카운터. 기본 0 |
+| questionSeq | 마지막으로 부여한 미결 질문(Q) 번호 카운터. 기본 0 |
 
 ## 변경: SpecItem
 
@@ -36,6 +37,15 @@
 - 되돌리기·AI 갱신이 기존 key의 행을 복사할 때 번호는 그대로 유지한다
 - 기존 key의 `kind`는 바뀔 수 없다 (출력 검증에서 거부)
 - 유니크: `(versionId, kind, number)`
+
+## 변경: OpenQuestion
+
+| 필드 | 설명 |
+|---|---|
+| number | 안정 번호(표시 `Q-{number}`). 같은 `key`의 모든 버전 행에 같은 값을 복사한다 |
+
+- 새 `key`가 처음 저장될 때 feature 락 안에서 `Spec.questionSeq`를 1 올려 부여하고, 되돌리기·새 버전에서 같은 key는 번호를 유지한다
+- 유니크: `(versionId, number)`
 
 ## 변경: SpecItemSource, OpenQuestionSource
 
@@ -52,7 +62,7 @@
 
 1. `Input.boardId`를 feature → project → board에서 채운다
 2. 보드별로 `submittedAt, id` 순서로 `number`를 1부터 부여하고 `Board.inputSeq`를 최댓값으로 설정한다
-3. spec별로 key의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 번호를 부여하고, 같은 key의 모든 버전 행에 같은 번호를 쓰고, `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정한다
+3. spec별로 항목은 `(key, kind)` 쌍의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 번호를 부여하고, 같은 `(key, kind)`의 모든 버전 행에 같은 번호를 쓰고, `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정한다. 질문은 key의 최초 등장 순서로 번호를 부여하고 `Spec.questionSeq`를 최댓값으로 설정한다. (002에는 기존 key의 종류 변경을 막는 규칙이 없었으므로 한 key가 종류를 바꾼 과거 데이터가 있으면 두 종류에 각각 번호가 붙는다. 그 수는 점검 스크립트가 보고하며, 이 feature 이후로는 종류 변경이 거부된다)
 4. 이후 NOT NULL·유니크 제약을 건다
 5. 기존 입력·항목·출처·버전의 내용은 변경하지 않는다
 
@@ -62,6 +72,9 @@
 - `firstVersion(key)`: key가 처음 나타난 버전 번호
 - `lastChangedVersion(key)`: 버전을 번호순으로 훑으며, 직전 버전에 key가 없었거나 문구가 직전과 달라진 가장 최근 버전 번호
 - 표시: 최신 버전에서 `firstVersion == 최신`이면 "vN에서 추가", `lastChangedVersion == 최신`이고 `firstVersion < 최신`이면 "vN에서 변경", 항상 "vN부터"(firstVersion)
+
+### 질문의 해소 버전
+- `resolvedInVersion(key)`: 질문이 처음 RESOLVED 상태가 된 버전 번호. 열린 질문은 null. 표시는 "vN에서 해소"
 
 ### spec 상태 판정(`deriveSpecStatus`)
 입력: 확정 여부, 활성 작업 존재, 최신 작업이 FAILED인지, 반영 대기 입력 수, 버전 존재 여부. 출력: `NONE | IDLE | UPDATING | FAILED | FINALIZED`. 002의 `getSpec` 규칙과 같고 홈 요약이 재사용한다.

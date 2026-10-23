@@ -34,23 +34,23 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### 번호와 스키마
 
-- [ ] T002 `prisma/schema.prisma`를 변경한다: `Board.inputSeq Int @default(0)`, `Input.boardId String`과 `Input.number Int`(유니크 `(boardId, number)`, 인덱스 `(boardId, status, submittedAt)`), `Spec.decisionSeq Int @default(0)`, `Spec.requirementSeq Int @default(0)`, `SpecItem.number Int`(유니크 `(versionId, kind, number)`), `SpecItemSource.quoteStart Int?`·`quoteEnd Int?`, `OpenQuestionSource.quoteStart Int?`·`quoteEnd Int?`
-- [ ] T003 마이그레이션을 `--create-only`로 생성하고 SQL을 직접 편집한다: 새 컬럼을 nullable로 추가 → `Input.boardId`를 feature→project→board에서 채움 → 보드별 `row_number() OVER (PARTITION BY boardId ORDER BY submittedAt, id)`로 `Input.number` 부여 후 `Board.inputSeq`를 최댓값으로 설정 → spec별로 key의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 `SpecItem.number`를 부여해 같은 key의 모든 버전 행에 복사하고 `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정 → NOT NULL과 유니크 제약 적용. 기존 입력·항목·출처·버전의 내용은 변경하지 않는다 (FR-013)
-- [ ] T004 [P] `scripts/verify-numbering.ts`에 개발 DB 점검 스크립트를 작성한다: 보드별 입력 번호 중복·누락 0, 버전 전체에서 같은 key의 번호 일치, 종류별 번호 중복 0, `Board.inputSeq`·`Spec.*Seq`가 최댓값과 일치함을 출력(시나리오 1). `package.json`에 `db:verify-numbering` 스크립트를 추가한다
+- [ ] T002 `prisma/schema.prisma`를 변경한다: `Board.inputSeq Int @default(0)`, `Input.boardId String`과 `Input.number Int`(유니크 `(boardId, number)`, 인덱스 `(boardId, status, submittedAt)`), `Spec.decisionSeq Int @default(0)`, `Spec.requirementSeq Int @default(0)`, `Spec.questionSeq Int @default(0)`, `SpecItem.number Int`(유니크 `(versionId, kind, number)`), `OpenQuestion.number Int`(유니크 `(versionId, number)`), `SpecItemSource.quoteStart Int?`·`quoteEnd Int?`, `OpenQuestionSource.quoteStart Int?`·`quoteEnd Int?`
+- [ ] T003 마이그레이션을 `--create-only`로 생성하고 SQL을 직접 편집한다: 새 컬럼을 nullable로 추가 → `Input.boardId`를 feature→project→board에서 채움 → 보드별 `row_number() OVER (PARTITION BY boardId ORDER BY submittedAt, id)`로 `Input.number` 부여 후 `Board.inputSeq`를 최댓값으로 설정 → spec별로 `(key, kind)` 쌍의 최초 등장(최소 버전 번호, 그 안의 position) 순서로 종류별 `SpecItem.number`를 부여해 같은 `(key, kind)`의 모든 버전 행에 복사하고(002에는 종류 변경 금지 규칙이 없어 종류가 바뀐 key는 종류별로 번호를 받는다) `Spec.decisionSeq`·`requirementSeq`를 최댓값으로 설정, 질문은 key의 최초 등장 순서로 `OpenQuestion.number`를 부여하고 `Spec.questionSeq`를 최댓값으로 설정 → NOT NULL과 유니크 제약 적용. 기존 입력·항목·출처·버전의 내용은 변경하지 않는다 (FR-013)
+- [ ] T004 [P] `scripts/verify-numbering.ts`에 개발 DB 점검 스크립트를 작성한다: 보드별 입력 번호 중복·누락 0, 버전 전체에서 같은 key의 번호 일치, 종류별 항목 번호와 질문 번호 중복 0, `Board.inputSeq`·`Spec.*Seq`가 최댓값과 일치함, **종류가 바뀐 key의 수**를 출력(시나리오 1). `package.json`에 `db:verify-numbering` 스크립트를 추가한다
 - [ ] T005 마이그레이션을 개발 DB에 적용하고 `npm run db:verify-numbering`으로 backfill을 확인한다(001·002로 쌓인 데이터 사용). 테스트 DB는 `tests/global-setup.ts`의 `migrate deploy`로 갱신된다
-- [ ] T006 [P] `src/lib/labels.ts`에 `inputLabel(n)`(`IN-n`), `itemLabel(kind, n)`(결정 `D-n`, 요구사항 `R-n`), `questionLabel(index)`(`Q-n`)를 만들고 `tests/unit/labels.test.ts`로 검증한다
+- [ ] T006 [P] `src/lib/labels.ts`에 `inputLabel(n)`(`IN-n`), `itemLabel(kind, n)`(결정 `D-n`, 요구사항 `R-n`), `questionLabel(number)`(`Q-n`)를 만들고 `tests/unit/labels.test.ts`로 검증한다
 - [ ] T007 [P] `tests/integration/numbering.test.ts`에 실패 테스트를 작성한다: 같은 보드에서 입력 20개를 동시에 제출해도 `(boardId, number)`가 1..20으로 중복·결번 없음, 제출이 검증 실패로 롤백되면 번호가 소비되지 않음, 보드가 다르면 번호가 각각 1부터 시작함 (FR-010)
 - [ ] T008 `src/server/services/numbering.ts`에 `allocateInputNumber(tx, boardId)`(`UPDATE "Board" SET "inputSeq" = "inputSeq" + 1 ... RETURNING`)를 구현하고, `src/server/services/inputs.ts`의 `submitInput`이 입력 생성과 같은 트랜잭션에서 `boardId`·`number`를 설정하도록 바꿔 T007을 통과시킨다
 - [ ] T009 [P] `tests/unit/validate-output.test.ts`에 "기존 key의 `kind` 변경 거부" 케이스를 추가하고 `src/server/ai/validate-output.ts`가 이를 거부하도록 한다 (FR-011)
-- [ ] T010 `src/server/services/numbering.ts`에 `allocateItemNumber(tx, specId, kind)`를 추가하고, `src/server/services/spec-jobs.ts`의 버전 저장(새 key에만 번호 부여, 기존 key는 이전 버전의 번호를 복사)과 `src/server/services/spec.ts`의 `revertSpec`(번호 그대로 복사)이 `SpecItem.number`를 채우도록 수정한다. 기존 002 통합 테스트가 모두 통과해야 한다
-- [ ] T011 [P] `tests/integration/spec-numbering.test.ts`에 항목 번호 테스트를 작성한다: 결정·요구사항이 종류별로 1부터 증가, 문구가 바뀌어도 번호 유지, 새 버전에서 같은 key는 같은 번호, 되돌리기 후에도 번호 유지, 삭제된 항목의 번호는 재사용되지 않음 (FR-011)
+- [ ] T010 `src/server/services/numbering.ts`에 `allocateItemNumber(tx, specId, kind)`와 `allocateQuestionNumber(tx, specId)`를 추가하고, `src/server/services/spec-jobs.ts`의 버전 저장(새 key에만 번호 부여, 기존 key는 이전 버전의 번호를 복사)과 `src/server/services/spec.ts`의 `revertSpec`(번호 그대로 복사)이 `SpecItem.number`와 `OpenQuestion.number`를 채우도록 수정한다. 기존 002 통합 테스트가 모두 통과해야 한다
+- [ ] T011 [P] `tests/integration/spec-numbering.test.ts`에 항목·질문 번호 테스트를 작성한다: 질문도 1부터 증가하고 해소되어도 번호 유지, 결정·요구사항이 종류별로 1부터 증가, 문구가 바뀌어도 번호 유지, 새 버전에서 같은 key는 같은 번호, 되돌리기 후에도 번호 유지, 삭제된 항목의 번호는 재사용되지 않음 (FR-011)
 
 ### 공용 계산
 
 - [ ] T012 [P] `tests/unit/spec-status.test.ts`에 `deriveSpecStatus` 테스트를 작성한다: 확정 > 갱신 중 > 실패(반영 대기 입력이 있을 때만) > 입력 없음(`NONE`) > `IDLE` 우선순위
 - [ ] T013 `src/server/services/spec-status.ts`에 `deriveSpecStatus`를 구현하고 `src/server/services/spec.ts`의 `getSpec`이 이를 사용하도록 리팩터링해 T012와 기존 `spec-status.test.ts`를 통과시킨다
-- [ ] T014 [P] `tests/unit/spec-provenance.test.ts`에 변경 버전 계산 테스트를 작성한다: 처음 등장 버전, 문구가 달라진 가장 최근 버전, 바뀌지 않으면 처음 버전, 항목이 사라졌다가 되돌리기로 복원되면 그 되돌림 버전이 마지막 변경, 최신 버전 기준 `ADDED`·`CHANGED`·`NONE` 판정
-- [ ] T015 `src/server/services/spec-provenance.ts`에 `computeProvenance(rows)`를 구현한다(spec의 전 버전 항목을 `(key, text, versionNumber)`로 한 번에 읽어 key별 `firstVersion`·`lastChangedVersion` 계산)해 T014를 통과시킨다
+- [ ] T014 [P] `tests/unit/spec-provenance.test.ts`에 변경 버전 계산 테스트를 작성한다: 처음 등장 버전, 문구가 달라진 가장 최근 버전, 바뀌지 않으면 처음 버전, 항목이 사라졌다가 되돌리기로 복원되면 그 되돌림 버전이 마지막 변경, 최신 버전 기준 `ADDED`·`CHANGED`·`NONE` 판정, 질문이 처음 RESOLVED가 된 버전(`resolvedInVersion`, 열린 질문은 null, 되돌리기로 다시 열리면 null)
+- [ ] T015 `src/server/services/spec-provenance.ts`에 `computeProvenance(rows)`를 구현한다(spec의 전 버전 항목을 `(key, text, versionNumber)`로 한 번에 읽어 key별 `firstVersion`·`lastChangedVersion` 계산, 질문은 `(key, status, versionNumber)`로 `resolvedInVersion` 계산)해 T014를 통과시킨다
 - [ ] T016 [P] `src/lib/errors.ts`의 `AppError`가 응답 본문에 `code`와 부가 데이터를 실을 수 있도록 확장하고 `toErrorResponse`가 이를 직렬화한다(`PREVIEW_CHANGED` 등에 사용). 기존 오류 응답 형식은 유지한다
 
 **Checkpoint**: 번호, 상태 판정, 변경 버전 계산, 오류 확장 준비 완료. 001·002 테스트 전부 통과
@@ -81,7 +81,7 @@ description: "디자인 시안 적용 구현 태스크"
 - [ ] T027 [P] [US8] `src/app/dev/ui-kit/page.tsx`에 모든 컴포넌트와 상태를 한 화면에 모은 개발 전용 페이지를 만든다(`NODE_ENV === "production"`이면 404)
 - [ ] T028 [US8] `src/components/layout/AppHeader.tsx`에 상단 내비를 만든다: 로고, 브레드크럼 자리, (관리자만) "승인 대기 N" 배지와 "멤버 관리", 사용자 이름, 내 역할 배지, 로그아웃. 권한이 없는 항목은 렌더링하지 않는다 (FR-006, FR-007)
 - [ ] T029 [US8] `src/components/layout/Breadcrumb.tsx`에 보드 › 프로젝트 › feature 경로와 각 단계의 전환 메뉴(`<details>`, 키보드 조작 가능)를 만든다
-- [ ] T030 [US8] `src/app/boards/[boardId]/layout.tsx`와 `src/app/boards/[boardId]/features/[featureId]/layout.tsx`에서 헤더 데이터(내 역할, 관리자일 때 대기 수)와 feature 탭(Spec / 입력 N / 버전 이력, 기존 URL 유지)을 제공한다. 대기 수는 T058 이후 실제 값으로 연결하고 그 전에는 숨긴다
+- [ ] T030 [US8] `src/app/boards/[boardId]/layout.tsx`와 `src/app/boards/[boardId]/features/[featureId]/layout.tsx`에서 헤더 데이터(내 역할, 관리자일 때 대기 수)와 feature 탭(Spec / 입력 N / 버전 이력, 기존 URL 유지)을 제공한다. 탭의 "입력 N" 개수는 T047, 헤더의 승인 대기 수는 T058에서 실제 값으로 연결하며, 그 전에는 숫자를 숨긴다
 - [ ] T031 [P] [US8] `src/app/not-found.tsx`와 `src/components/ui/ForbiddenView.tsx`에 시안의 404, 403 화면(현재 내 역할 표시, "홈으로"/"내 보드로")을 만든다. 404는 접근 권한이 없는 보드의 존재 여부를 드러내지 않는다 (FR-036)
 
 **Checkpoint**: 토큰, 공용 컴포넌트, 헤더, 접근성 점검 도구가 갖춰짐
@@ -96,17 +96,17 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 1
 
-- [ ] T032 [P] [US1] `tests/integration/spec-view.test.ts`에 `getSpec` 확장 테스트를 작성한다: 항목의 `number`·`label`(D-1, R-1), `firstVersion`·`lastChangedVersion`·`change`, 출처의 `number`(IN-n)와 `status`, `counts`(결정·요구사항·열린·해소 질문), `recentVersions`(최대 3개, `isCurrent`), 갱신 중일 때 `progress.inputCount`, 실패일 때 `failure`(시도 횟수, 시각, 코드, 생성하려던 버전 번호), 확정 메시지에 해제 시 반영될 대기 입력 수 (FR-012, FR-022~FR-025)
+- [ ] T032 [P] [US1] `tests/integration/spec-view.test.ts`에 `getSpec` 확장 테스트를 작성한다: 항목의 `number`·`label`(D-1, R-1), `firstVersion`·`lastChangedVersion`·`change`, 출처의 `number`(IN-n)와 `status`, 질문의 `number`·`label`(Q-n)·`resolvedInVersion`, `counts`(결정·요구사항·열린·해소 질문), `recentVersions`(최대 3개, `isCurrent`), 갱신 중일 때 `progress.inputCount`, 실패일 때 `failure`(시도 횟수, 시각, 코드, 생성하려던 버전 번호), 확정 메시지에 해제 시 반영될 대기 입력 수 (FR-012, FR-022~FR-025)
 - [ ] T033 [P] [US1] `tests/e2e/spec-screen.spec.ts`를 작성한다: 항목 번호와 "vN부터" 표시, "출처 N" 클릭 → 출처 패널(입력 번호·종류·제출자·시각·승인) → "원문 전체 보기"까지 클릭 두 번 이내, 미결 질문 레일의 열림·해소 구분, 확정·갱신 중 상태 안내, 멤버에게는 확정·재시도 버튼이 보이지 않음 (시나리오 3~5, 17, 21)
 
 ### Implementation for User Story 1
 
-- [ ] T034 [US1] `src/server/services/spec-view.ts`를 확장한다: `ItemView`에 `number`·`label`·`firstVersion`·`lastChangedVersion`·`change`, `SourceRef`에 `number`·`status`·`quote`(null), `QuestionView`에 `label`·`resolvedInVersion`, 버전 `counts`와 `isCurrent`. 기존 필드는 제거하지 않는다
+- [ ] T034 [US1] `src/server/services/spec-view.ts`를 확장한다: `ItemView`에 `number`·`label`·`firstVersion`·`lastChangedVersion`·`change`, `SourceRef`에 `number`·`status`·`quote`(null), `QuestionView`에 `number`·`label`(`Q-n`, 안정 번호)·`resolvedInVersion`, 버전 `counts`와 `isCurrent`. 기존 필드는 제거하지 않는다
 - [ ] T035 [US1] `src/server/services/spec.ts`의 `getSpec`을 확장한다: `computeProvenance`로 변경 버전 계산, `counts`, `recentVersions`(최근 3개), `progress`(반영 대기 입력 수, 배치 상한 적용), `failure`(최신 FAILED 작업의 시도 횟수·시각·코드·다음 버전 번호), 상태별 안내 문구(시안 10쪽: 갱신 중, 실패 — "마지막 성공 버전이 그대로 보이고 입력은 손실되지 않았음", 확정, 입력 없음 — 대기 입력 수 포함)를 반환해 T032를 통과시킨다
 - [ ] T036 [P] [US1] `src/components/spec/SpecHeaderCard.tsx`에 버전 카드(최신 배지, 버전·시각·생성 방식, "이력·비교" 링크, 관리자에게만 "이 버전 확정")를 만든다
 - [ ] T037 [P] [US1] `src/components/spec/StatusBanner.tsx`에 상태 안내(갱신 중 진행 막대와 "입력 N개를 읽고 있습니다", 실패 — 관리자는 "AI 갱신 다시 시도"·멤버/열람자는 안내만, 확정, 승인된 입력 없음 — "승인 대기 보기" 링크, 질문만 있고 항목이 없음 — "미결 질문 보기")과 반영 대기 입력 배너("다음 AI 갱신에 반영됩니다", "입력 보기" 링크)를 만든다 (FR-024, FR-025)
 - [ ] T038 [P] [US1] `src/components/spec/ItemCard.tsx`와 `SourcePanel.tsx`에 항목 카드(종류 배지, 번호, 문구, "AI 정리 · vN부터/vN에서 변경/vN에서 추가", "출처 N" 칩)와 출처 패널(`[n] IN-번호`, 종류, 제출자, 시각, 승인, 본문, "원문 전체 보기" 링크, 발췌 강조 자리)을 만든다. 펼침은 `aria-expanded`로 키보드 조작 가능
-- [ ] T039 [P] [US1] `src/components/spec/QuestionRail.tsx`에 미결 질문 레일(열림·해소 개수, 안내문, 질문 카드 Q-n, "해소됨" 구분선, 답이 된 입력 칩, 관련 입력 없음 문구, 멤버·관리자에게만 "질문에 답하는 입력 제출" 진입점)을 만든다 (FR-026)
+- [ ] T039 [P] [US1] `src/components/spec/QuestionRail.tsx`에 미결 질문 레일(열림·해소 개수, 안내문, 질문 카드 Q-n, "해소됨" 구분선, 답이 된 입력 칩, 관련 입력 없음 문구, 멤버·관리자에게만 "질문에 답하는 입력 제출" 진입점 — 입력 화면의 제출 폼으로 이동하는 링크)을 만든다 (FR-026)
 - [ ] T040 [P] [US1] `src/components/spec/RecentVersions.tsx`와 `LockControl.tsx`에 최근 버전 카드와 확정 컨트롤(확정됨 배지·확정자·시각, 확정 확인 창, 확정 해제 확인 창 — 해제하면 곧바로 반영될 대기 입력 수 안내)을 만든다. 기존 `FinalizeButton`을 대체한다
 - [ ] T041 [US1] `src/app/boards/[boardId]/features/[featureId]/spec/page.tsx`를 시안 1쪽 구조(항목 영역 + 우측 질문 레일 + 최근 버전)로 다시 만들고, 갱신 중이면 자동 새로고침을 유지한다. 구 컴포넌트(`SpecItemList`, `OpenQuestionList`, `SourceList`, `FinalizeButton`, `RetryButton`)는 대체 후 제거한다
 - [ ] T042 [US1] `src/styles/components.css`에 spec 화면 반응형(`max-width: 720px`: 단일 컬럼, 질문 레일을 항목 위로)을 추가한다 (FR-009)
@@ -125,7 +125,7 @@ description: "디자인 시안 적용 구현 태스크"
 ### Tests for User Story 2
 
 - [ ] T044 [P] [US2] `tests/integration/input-view.test.ts`에 `listInputsView` 테스트를 작성한다: 필터 4종(`all`, `mine-pending`, `reflect-pending`, `rejected`)이 가시성 규칙(관리자 전체, 그 외 승인·반려 + 본인 대기) 안에서 동작, `counts`가 각 필터 결과 수와 일치, `limit`/`cursor` 페이징과 `nextCursor`, 잘못된 filter·limit는 400, 입력에 `number`·`reflectedVersion`·`isMine` 포함, 비멤버 403 (FR-014, FR-016)
-- [ ] T045 [P] [US2] `tests/e2e/inputs-screen.spec.ts`를 작성한다: 필터 칩 선택이 주소(`?filter=`)에 반영되고 새로고침 후 유지, 긴 본문 "펼치기"와 전체 글자 수, 멤버 본인 대기 입력의 "나와 관리자에게만 보임", 반려 사유 박스, 제출 폼의 글자 수 카운터와 흐름 안내, 열람자에게는 폼 없음 (시나리오 10~12, 21)
+- [ ] T045 [P] [US2] `tests/e2e/inputs-screen.spec.ts`를 작성한다: 필터 칩 선택이 주소(`?filter=`)에 반영되고 새로고침 후 유지, 긴 본문 "펼치기"와 전체 글자 수, 멤버 본인 대기 입력의 "나와 관리자에게만 보임", 반려 사유 박스, 제출 폼의 글자 수 카운터와 흐름 안내, 50,000자에 가까운 원문에서도 레이아웃이 깨지지 않고 접힘·펼침이 동작, 열람자에게는 폼 없음 (시나리오 10~12, 21)
 
 ### Implementation for User Story 2
 
@@ -136,7 +136,7 @@ description: "디자인 시안 적용 구현 태스크"
 - [ ] T050 [P] [US2] `src/components/inputs/InputFilters.tsx`(링크 기반 필터 칩과 개수)와 "이전 입력 N개 더 보기"(`cursor` 링크)를 만든다 (FR-016)
 - [ ] T051 [P] [US2] `src/components/inputs/SubmitInputForm.tsx`를 시안대로 다시 만든다: 종류 세그먼트(라디오 그룹), 본문과 `0 / 50,000` 카운터, "제출 후 흐름" 안내, 제출 오류 표시, 제출 후 목록 갱신 (FR-017)
 - [ ] T052 [US2] `src/app/boards/[boardId]/features/[featureId]/inputs/page.tsx`를 시안 5쪽의 2열 구조(제출 폼 + 필터·목록)로 다시 만들고, 열람자에게는 폼을 렌더링하지 않는다. 휴대폰 너비에서는 단일 컬럼으로 폼이 목록 위에 온다 (FR-009)
-- [ ] T053 [US2] 기존 `tests/e2e/submit-input.spec.ts`, `approve-reject.spec.ts`를 새 화면(승인 대기는 T058 이후)에 맞게 갱신한다
+- [ ] T053 [US2] 기존 `tests/e2e/submit-input.spec.ts`, `approve-reject.spec.ts`를 새 화면(승인 대기 흐름은 T060·T061 이후)에 맞게 갱신한다
 
 **Checkpoint**: US1 + US2로 핵심 두 화면이 시안과 일치
 
@@ -151,7 +151,7 @@ description: "디자인 시안 적용 구현 태스크"
 ### Tests for User Story 3
 
 - [ ] T054 [P] [US3] `tests/integration/board-pending.test.ts`에 테스트를 작성한다: 두 feature의 대기 입력이 한 목록에 오래된 순으로 나오고 프로젝트·feature 이름 포함, `feature` 필터, 승인·반려 후 목록과 개수 감소, 개수 0, 관리자 외(멤버·열람자·비멤버)는 403, 다른 보드의 입력은 섞이지 않음, 이미 처리된 입력 처리 시 409 (FR-018~FR-020)
-- [ ] T055 [P] [US3] `tests/e2e/board-pending.spec.ts`를 작성한다: 서로 다른 feature의 입력 승인·반려를 한 화면에서 처리, 반려 사유 비면 확정 불가·취소 가능, 상단 배지 숫자 갱신과 0일 때 숫자 숨김, 멤버에게는 메뉴·배지 없음 (시나리오 13, 14, 21)
+- [ ] T055 [P] [US3] `tests/e2e/board-pending.spec.ts`를 작성한다: 서로 다른 feature의 입력 승인·반려를 한 화면에서 처리, 반려 사유 비면 확정 불가·취소 가능, 상단 배지 숫자 갱신과 0일 때 숫자 숨김, 100개 이상일 때 "99+" 표시, 멤버에게는 메뉴·배지 없음 (시나리오 13, 14, 21)
 
 ### Implementation for User Story 3
 
@@ -192,7 +192,7 @@ description: "디자인 시안 적용 구현 태스크"
 ### Tests for User Story 5
 
 - [ ] T067 [P] [US5] `tests/unit/word-diff.test.ts`에 단어 단위 diff 테스트를 작성한다: 어절 기준 추가·삭제 구간, 한글 문장, 변화 없음, 전부 다름, 빈 문자열 (FR-028)
-- [ ] T068 [P] [US5] `tests/integration/spec-diff-v2.test.ts`에 비교 확장 테스트를 작성한다: `summary`(추가·삭제·변경·동일 개수), 변경에 `label`·`kind`·`scope`, `addedSources`(to에만 있는 출처의 입력 번호), 같은 버전 비교는 400, 질문 변경(열림→해소) (FR-027, FR-028)
+- [ ] T068 [P] [US5] `tests/integration/spec-diff-v2.test.ts`에 비교 확장 테스트를 작성한다: `summary`(추가·삭제·변경·동일 개수), 변경에 `label`·`kind`·`scope`, `addedSources`(to에만 있는 출처의 입력 번호), 같은 버전 비교는 400, 번호가 다르지만 내용이 같은 두 버전은 변경 0건과 `unchanged` 개수만 반환("차이가 없습니다" 표시용), 질문 변경(열림→해소) (FR-027, FR-028)
 - [ ] T069 [P] [US5] `tests/integration/revert-preview.test.ts`에 테스트를 작성한다: `removedItems`·`reopenedQuestions` 수와 라벨이 실제로 되돌린 결과와 일치(여러 조합으로 `revertSpec` 후 비교), 확정 상태 409(`FINALIZED`), 최신과 같은 내용 409(`NO_CHANGE`), `expected`가 일치하면 실행·불일치(미리보기 후 최신 버전이 바뀜, 영향 수치가 달라짐)하면 실행하지 않고 409 `PREVIEW_CHANGED`와 최신 미리보기 반환, 관리자 외 403 (FR-029, FR-030, SC-007)
 - [ ] T070 [P] [US5] `tests/e2e/history-screen.spec.ts`를 작성한다: 체크박스로 A/B 선택·같은 버전 거부, 요약 개수, 변경 없는 항목 숨김 토글, 단어 강조, 되돌리기 확인 창(영향 목록, 취소 기본 포커스, Esc 닫기, 키보드로 확정), 확정 상태에서는 되돌리기 버튼 대신 안내, 멤버에게는 버튼 없음 (시나리오 18~21)
 
@@ -219,7 +219,7 @@ description: "디자인 시안 적용 구현 태스크"
 ### Tests for User Story 6
 
 - [ ] T080 [P] [US6] `tests/unit/quotes.test.ts`에 `locateQuote(content, quote)` 테스트를 작성한다: 정확히 일치, 공백·줄바꿈만 다른 경우 일치(원문 실제 표기 범위 반환), 원문에 없으면 null, 빈 문자열·500자 초과면 null, 여러 번 나오면 첫 번째 위치, 정규식 특수문자 포함 발췌, 반환 범위가 `0 ≤ start < end ≤ 길이`이고 `end − start ≤ 500` (FR-032)
-- [ ] T081 [P] [US6] `tests/integration/spec-quotes.test.ts`에 테스트를 작성한다: 원문에 있는 발췌는 `quoteStart/End`로 저장되고 `getSpec` 출처에 `quote`로 노출, 원문에 없는 발췌는 버려지고 항목·출처 연결은 정상 저장(오류 없음, 작업 DONE), 공백 차이 발췌 인정, 같은 출처를 다시 인용하지 않은 기존 항목의 발췌는 유지, 이전(002) 버전의 출처는 `quote: null`로 오류 없이 표시, 같은 항목의 출처마다 각자의 발췌 (FR-031~FR-033, SC-005)
+- [ ] T081 [P] [US6] `tests/integration/spec-quotes.test.ts`에 테스트를 작성한다: 원문에 있는 발췌는 `quoteStart/End`로 저장되고 `getSpec` 출처에 `quote`로 노출, 원문에 없는 발췌는 버려지고 항목·출처 연결은 정상 저장(오류 없음, 작업 DONE), 공백 차이 발췌 인정, 같은 출처를 다시 인용하지 않은 기존 항목의 발췌는 유지, 이전(002) 버전의 출처는 `quote: null`로 오류 없이 표시, 같은 항목의 출처마다 각자의 발췌, 항목이 인용했다고 선언(`sourceInputIds`)하지 않은 입력의 발췌는 무시 (FR-031~FR-033, SC-005)
 
 ### Implementation for User Story 6
 
@@ -228,7 +228,7 @@ description: "디자인 시안 적용 구현 태스크"
 - [ ] T084 [US6] `src/server/services/spec-jobs.ts`의 버전 저장이 새 출처의 발췌를 `locateQuote`로 검증해 `quoteStart/End`를 저장하고(실패하면 null), 기존 항목의 같은 출처에는 이전 버전의 발췌를 유지하도록 수정한다. 발췌 때문에 작업이 실패해서는 안 된다
 - [ ] T085 [P] [US6] `src/server/ai/fake-spec-writer.ts`가 입력 본문 앞 문장을 발췌로 제시하도록 하고, 원문에 없는 발췌를 주입하는 옵션(`badQuotes`)을 추가한다
 - [ ] T086 [P] [US6] `src/server/ai/claude-spec-writer.ts`의 프롬프트에 "quote는 원문에서 그대로 복사한 한 문장이고 확실하지 않으면 생략한다, 항목·질문마다 새로 인용하는 출처에만 단다" 지시를 추가하고 구조화 출력 스키마에 `quotes`를 반영한다
-- [ ] T087 [US6] `src/server/services/spec-view.ts`가 출처의 `quote: {start, end} | null`을 내려주고, `src/components/spec/SourcePanel.tsx`가 발췌가 있으면 원문 구간을 `<mark>`로 강조해 인용 형태로 보여주며(없으면 원문만), "원문 전체 보기(IN-n)" 링크로 입력 화면의 해당 입력으로 이동하도록 한다 (FR-033)
+- [ ] T087 [US6] `src/server/services/spec-view.ts`가 출처의 `quote: {start, end} | null`을 내려주고, `src/components/spec/SourcePanel.tsx`가 발췌가 있으면 원문 구간을 `<mark>`로 강조하되 배경색에만 의존하지 않고 인용 부호와 밑줄을 함께 써서 보여주며(없으면 원문만), "원문 전체 보기(IN-n)" 링크로 입력 화면의 해당 입력으로 이동하도록 한다 (FR-033)
 - [ ] T088 [P] [US6] `tests/live/spec-writer.live.test.ts`에 실제 Claude의 발췌 점검을 추가한다(키 있을 때만): 제시된 발췌 중 원문에 실제 존재하는 비율을 계산해 출력하고, 존재하지 않는 발췌가 저장되지 않음을 확인한다
 
 ---
@@ -255,7 +255,7 @@ description: "디자인 시안 적용 구현 태스크"
 - [ ] T097 [P] `tests/e2e/responsive.spec.ts`에 휴대폰 너비(375px)에서 spec 보기와 입력 제출 화면에 가로 스크롤이 없고 질문이 항목 위에 있음을 확인한다 (시나리오 24, SC-010)
 - [ ] T098 [P] `tests/integration/api-authz-v3.test.ts`에 새 API 전부(`/home`, `/pending`, `/pending/count`, `inputs/view`, `revert-preview`)의 권한 매트릭스(data-model.md)와 서비스 함수의 `requireRole` 통과를 점검한다 (FR-007, SC-008)
 - [ ] T099 [P] `tests/integration/latency-v3.test.ts`에 홈 요약, 보드 승인 대기, 입력 뷰, 되돌리기 미리보기의 서버 처리 p95가 300ms 이내인지 확인한다(보드 입력 1,000개, feature 20개 규모)
-- [ ] T100 [P] 남은 구 스타일(`src/app/globals.css`)과 사용되지 않는 구 컴포넌트를 제거하고 `npx eslint .`, `npx tsc --noEmit`, `npx next build`가 통과함을 확인한다
+- [ ] T100 [P] 남은 구 스타일(`src/app/globals.css`)과 사용되지 않는 구 컴포넌트를 제거하고 `npx eslint .`, `npx tsc --noEmit`, `npx next build`가 통과함을 확인한다(글꼴 내려받기에 네트워크가 필요하므로 오프라인이면 시스템 글꼴 대체로 빌드가 계속되는지도 확인하고 결과를 quickstart에 기록)
 - [ ] T101 [P] `specs/003-design-system-ui/quickstart.md`의 "실행" 절을 실제 스크립트 명령으로 갱신한다(`db:verify-numbering`, axe 포함 E2E)
 - [ ] T102 `design-parity.md`의 모든 항목을 시안 PDF와 화면을 나란히 열어 직접 확인하고 체크한다. 범위 밖으로 명시한 요소가 들어가지 않았는지도 확인한다 (SC-011)
 - [ ] T103 quickstart.md 시나리오 1~25를 처음부터 끝까지 수행해 결과를 확인한다(실제 Claude 발췌 확인은 키가 있을 때 T088과 함께)
