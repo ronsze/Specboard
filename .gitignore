@@ -1,2 +1,11 @@
 .idea/
 *.iml
+.next/
+node_modules/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.local
+next-env.d.ts
+*.tsbuildinfo

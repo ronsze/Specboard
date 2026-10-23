@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum InputKind {
+  MEETING_NOTE
+  IDEA
+  OPINION
+}
+
+enum InputStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime     @default(now())
+  memberships  Membership[]
+  inputs       Input[]      @relation("submitter")
+  decisions    Input[]      @relation("decider")
+}
+
+model Board {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  projects    Project[]
+}
+
+model Membership {
+  boardId   String
+  userId    String
+  role      Role
+  createdAt DateTime @default(now())
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([boardId, userId])
+}
+
+model Project {
+  id       String    @id @default(cuid())
+  boardId  String
+  name     String
+  board    Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  features Feature[]
+}
+
+model Feature {
+  id        String  @id @default(cuid())
+  projectId String
+  name      String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inputs    Input[]
+}
+
+model Input {
+  id              String      @id @default(cuid())
+  featureId       String
+  kind            InputKind
+  content         String
+  submittedBy     String?
+  submitterName   String
+  submittedAt     DateTime    @default(now())
+  status          InputStatus @default(PENDING)
+  decidedBy       String?
+  decidedByName   String?
+  decidedAt       DateTime?
+  autoApproved    Boolean     @default(false)
+  rejectionReason String?
+  feature         Feature     @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  submitter       User?       @relation("submitter", fields: [submittedBy], references: [id], onDelete: SetNull)
+  decider         User?       @relation("decider", fields: [decidedBy], references: [id], onDelete: SetNull)
+
+  @@index([featureId, status])
+}
