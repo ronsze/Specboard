@@ -7,14 +7,15 @@ import { parse } from "@/server/services/inputs";
 
 type Actor = { id: string };
 
-export type MemberDto = { userId: string; displayName: string; email: string; role: Role };
+export type MemberDto = { userId: string; displayName: string; email: string; role: Role; joinedAt: string };
 
-type Row = { userId: string; role: Role; user: { displayName: string; email: string } };
+type Row = { userId: string; role: Role; createdAt: Date; user: { displayName: string; email: string } };
 const toDto = (m: Row): MemberDto => ({
   userId: m.userId,
   displayName: m.user.displayName,
   email: m.user.email,
   role: m.role,
+  joinedAt: m.createdAt.toISOString(),
 });
 const include = { user: { select: { displayName: true, email: true } } } as const;
 

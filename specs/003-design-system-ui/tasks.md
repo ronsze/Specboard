@@ -239,12 +239,12 @@ description: "디자인 시안 적용 구현 태스크"
 
 **Independent Test**: 각 화면과 상태를 만들어 시안 7, 9, 10쪽과 대조한다 (시나리오 21, 23)
 
-- [ ] T089 [P] [US7] `tests/e2e/login-members.spec.ts`를 작성한다: 로그인 실패 안내가 폼 위에 보이고 이메일 값 유지, "계정은 보드 관리자가 추가합니다" 안내, 멤버 관리의 "(나)" 표시와 역할 즉시 저장, 마지막 관리자 강등 시 그 행의 오류와 "역할은 관리자로 유지됩니다", 멤버가 `/boards/[id]/members` 직접 접근 시 403 안내와 내 역할 표시, 없는 보드·feature 주소는 404 (시나리오 21, 23)
-- [ ] T090 [US7] `src/app/login/page.tsx`를 시안 9쪽으로 다시 만든다(로고, 한 줄 소개 "회의에서 정한 것을, 근거와 함께 남깁니다.", 오류 안내 폼 위, 이메일 값 유지, 안내 문구). 로그인 실패 시 이메일을 쿼리로 되돌려 채운다 (FR-035)
-- [ ] T091 [P] [US7] `src/components/members/MemberTable.tsx`에 멤버 추가 폼과 표(이름, 이메일, 역할, 추가일), "(나)" 표시, 역할 즉시 저장, 행 단위 오류(마지막 관리자 강등), 하단 역할 설명을 만든다(`MemberManager` 대체) (FR-034)
-- [ ] T092 [US7] `src/app/boards/[boardId]/members/page.tsx`를 시안 7쪽으로 다시 만들고, 관리자가 아니면 `ForbiddenView`를 렌더링한다. 같은 방식으로 관리자 전용 화면(보드 승인 대기)에도 적용한다 (FR-007)
-- [ ] T093 [P] [US7] `src/components/ui/EmptyState.tsx`를 시안 10쪽 문구로 채워 각 화면에 적용한다: 입력 없음("첫 입력 제출"), 승인된 입력 없음("승인 대기 보기"), 필터 결과 없음, 질문만 있고 항목 없음 (FR-036)
-- [ ] T094 [US7] `src/components/layout/Breadcrumb.tsx`와 `src/app/not-found.tsx`가 접근 권한이 없는 보드와 존재하지 않는 보드를 구별하지 못하게 한다(둘 다 같은 404 문구)
+- [X] T089 [P] [US7] `tests/e2e/login-members.spec.ts`를 작성한다: 로그인 실패 안내가 폼 위에 보이고 이메일 값 유지, "계정은 보드 관리자가 추가합니다" 안내, 멤버 관리의 "(나)" 표시와 역할 즉시 저장, 마지막 관리자 강등 시 그 행의 오류와 "역할은 관리자로 유지됩니다", 멤버가 `/boards/[id]/members` 직접 접근 시 403 안내와 내 역할 표시, 없는 보드·feature 주소는 404 (시나리오 21, 23)
+- [X] T090 [US7] `src/app/login/page.tsx`를 시안 9쪽으로 다시 만든다(로고, 한 줄 소개 "회의에서 정한 것을, 근거와 함께 남깁니다.", 오류 안내 폼 위, 이메일 값 유지, 안내 문구). 로그인 실패 시 이메일을 쿼리로 되돌려 채운다 (FR-035)
+- [X] T091 [P] [US7] `src/components/members/MemberTable.tsx`에 멤버 추가 폼과 표(이름, 이메일, 역할, 추가일), "(나)" 표시, 역할 즉시 저장, 행 단위 오류(마지막 관리자 강등), 하단 역할 설명을 만든다(`MemberManager` 대체) (FR-034)
+- [X] T092 [US7] `src/app/boards/[boardId]/members/page.tsx`를 시안 7쪽으로 다시 만들고, 관리자가 아니면 `ForbiddenView`를 렌더링한다. 같은 방식으로 관리자 전용 화면(보드 승인 대기)에도 적용한다 (FR-007)
+- [X] T093 [P] [US7] `src/components/ui/EmptyState.tsx`를 시안 10쪽 문구로 채워 각 화면에 적용한다: 입력 없음("첫 입력 제출"), 승인된 입력 없음("승인 대기 보기"), 필터 결과 없음, 질문만 있고 항목 없음 (FR-036)
+- [X] T094 [US7] `src/components/layout/Breadcrumb.tsx`와 `src/app/not-found.tsx`가 접근 권한이 없는 보드와 존재하지 않는 보드를 구별하지 못하게 한다(둘 다 같은 404 문구)
 
 ---
 
