@@ -105,7 +105,7 @@ async function finishFailed(job: SpecJob, code: SpecWriterErrorCode): Promise<Ru
   return "FAILED";
 }
 
-function takeBatch<T extends { content: string }>(inputs: T[]): T[] {
+export function takeBatch<T extends { content: string }>(inputs: T[]): T[] {
   const batch: T[] = [];
   let chars = 0;
   for (const input of inputs) {
@@ -189,6 +189,7 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
     return finishFailed(job, code);
   }
 
+  // 항목·출처를 순차 저장하므로 큰 spec에서도 기본 5초 제한에 걸리지 않게 넉넉히 둔다
   const committed = await db.$transaction(async (tx) => {
     await tx.$executeRaw(lockKey(featureId));
     const fresh = await tx.spec.findUnique({
@@ -250,7 +251,7 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
     await tx.input.updateMany({ where: { id: { in: [...batchIds] } }, data: { consumedVersionId: version.id } });
     await tx.spec.update({ where: { id: target.id }, data: { currentVersionId: version.id } });
     return "OK" as const;
-  }).catch((e) => {
+  }, { timeout: 30_000, maxWait: 10_000 }).catch((e) => {
     if (e instanceof Error && e.message === "INPUTS_ALREADY_CONSUMED") return "STALE" as const;
     throw e;
   });

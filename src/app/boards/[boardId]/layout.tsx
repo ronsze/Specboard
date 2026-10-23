@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/layout/AppHeader";
 import { pageContext } from "@/server/auth/page-context";
+import { countBoardPending } from "@/server/services/board-pending";
 import { getNavTree } from "@/server/services/nav";
 
 export default async function BoardLayout({
@@ -12,10 +13,10 @@ export default async function BoardLayout({
   const { boardId } = await params;
   const { user, role } = await pageContext(boardId);
   const tree = await getNavTree(user.id);
-  // 승인 대기 개수는 보드 단위 승인 대기 서비스(T056)가 생기면 연결한다
+  const pendingCount = role === "ADMIN" ? await countBoardPending(user, boardId) : null;
   return (
     <>
-      <AppHeader userName={user.displayName} tree={tree} board={{ id: boardId, role, pendingCount: null }} />
+      <AppHeader userName={user.displayName} tree={tree} board={{ id: boardId, role, pendingCount }} />
       {children}
     </>
   );

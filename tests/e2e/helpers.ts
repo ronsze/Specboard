@@ -33,3 +33,24 @@ export async function openFeatureByName(page: Page, name: string) {
   await page.getByRole("link", { name }).click();
   await page.waitForURL(/\/inputs$/);
 }
+
+/** 현재 feature 화면의 기준 주소 (…/features/[id]) */
+export function featureBase(page: Page) {
+  return page.url().replace(/\/(inputs|spec)(\/.*)?(\?.*)?(#.*)?$/, "");
+}
+
+/** 입력 화면에서 입력을 제출한다 (제출 후 목록에 나타날 때까지 기다린다). */
+export async function submitInput(page: Page, text: string) {
+  await page.getByLabel("본문").fill(text);
+  await page.getByRole("button", { name: "제출하기" }).click();
+  await page.locator("article", { hasText: text }).first().waitFor();
+}
+
+/** 개발 서버에서는 하이드레이션 전의 클릭이 무시될 수 있어, 다음 UI가 나타날 때까지 클릭을 반복한다. */
+export async function clickUntil(click: () => Promise<void>, next: () => Promise<void>) {
+  const { expect } = await import("@playwright/test");
+  await expect(async () => {
+    await click();
+    await next();
+  }).toPass({ timeout: 15_000 });
+}

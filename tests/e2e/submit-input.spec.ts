@@ -6,11 +6,11 @@ test("멤버가 아이디어 한 줄을 제출하면 대기로 표시된다", as
   await login(page, "member");
   await openFeature(page);
 
-  await page.getByRole("button", { name: "제출" }).click();
-  await expect(page.locator("p.error")).toContainText("내용을 입력");
+  await page.getByRole("button", { name: "제출하기" }).click();
+  await expect(page.locator("p.error-text")).toContainText("내용을 입력");
 
-  await page.getByLabel("내용").fill(text);
-  await page.getByRole("button", { name: "제출" }).click();
+  await page.getByLabel("본문").fill(text);
+  await page.getByRole("button", { name: "제출하기" }).click();
 
   const card = page.locator("article", { hasText: text });
   await expect(card).toBeVisible();

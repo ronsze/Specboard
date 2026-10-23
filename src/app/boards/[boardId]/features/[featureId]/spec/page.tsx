@@ -1,21 +1,17 @@
-import Link from "next/link";
 import { after } from "next/server";
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { ItemCard } from "@/components/spec/ItemCard";
+import { QuestionRail } from "@/components/spec/QuestionRail";
+import { RecentVersions } from "@/components/spec/RecentVersions";
+import { SpecHeaderCard } from "@/components/spec/SpecHeaderCard";
+import { StatusBanners } from "@/components/spec/StatusBanner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Icon } from "@/components/ui/Icon";
 import { pageContext } from "@/server/auth/page-context";
 import { getSpec } from "@/server/services/spec";
 import { drainSpecJobs } from "@/server/services/spec-jobs";
-import { AutoRefresh } from "@/components/AutoRefresh";
-import { RetryButton } from "@/components/RetryButton";
-import { FinalizeButton } from "@/components/FinalizeButton";
-import { SpecItemList } from "@/components/SpecItemList";
-import { OpenQuestionList } from "@/components/OpenQuestionList";
 
-const STATUS_LABEL = {
-  NONE: "입력 없음",
-  IDLE: "최신",
-  UPDATING: "갱신 중",
-  FAILED: "갱신 실패",
-  FINALIZED: "확정",
-} as const;
+export const metadata = { title: "Spec" };
 
 export default async function SpecPage({
   params,
@@ -28,43 +24,50 @@ export default async function SpecPage({
   // 멈춘 갱신(프로세스 재시작 등)이 있으면 이어서 처리한다
   if (spec.status === "UPDATING") after(() => drainSpecJobs(featureId).catch(console.error));
 
+  const base = `/boards/${boardId}/features/${featureId}`;
+  const inputsBase = `${base}/inputs`;
+  const version = spec.version;
+  const noItems = version && version.items.length === 0;
+
   return (
-    <main>
-      <nav>
-        <Link href={`/boards/${boardId}/features/${featureId}/inputs`}>← 입력 목록</Link>
-        <span className="spacer" />
-        <Link href={`/boards/${boardId}/features/${featureId}/spec/history`}>버전 이력</Link>
-        <span className="badge">{role}</span>
-      </nav>
-      <h1>
-        spec {spec.version && <span className="meta">v{spec.version.number}</span>}{" "}
-        <span className={`badge ${spec.status}`}>{STATUS_LABEL[spec.status]}</span>
-      </h1>
+    <div className="stack" style={{ gap: 16 }}>
       <AutoRefresh active={spec.status === "UPDATING"} />
-      {spec.message && (
-        <p className={spec.status === "FAILED" ? "error" : "meta"} role="status">
-          {spec.message} {spec.status === "FAILED" && role === "ADMIN" && <RetryButton boardId={boardId} featureId={featureId} />}
-        </p>
+      <SpecHeaderCard spec={spec} role={role} boardId={boardId} featureId={featureId} />
+      <StatusBanners spec={spec} role={role} boardId={boardId} featureId={featureId} />
+
+      {version && (
+        <div className="split">
+          <section aria-label="spec 항목" className="stack">
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
+              <h2>
+                항목{" "}
+                <span className="meta" style={{ fontWeight: 400 }}>
+                  결정 {version.counts.decisions} · 요구사항 {version.counts.requirements}
+                </span>
+              </h2>
+              <p className="small row" style={{ gap: 12 }} aria-label="범례">
+                <span><span className="badge badge--ai"><Icon name="lines" size={12} /> AI 정리</span> 승인된 입력만으로 정리</span>
+                <span><span className="badge badge--src"><Icon name="doc" size={12} /> 출처</span> 근거가 된 원문</span>
+                <span><span className="badge badge--q"><Icon name="question" size={12} /> 미결</span> 근거 부족, 단정하지 않음</span>
+              </p>
+            </div>
+            {noItems ? (
+              <EmptyState
+                icon="question"
+                title="아직 단정할 수 있는 항목이 없습니다"
+              >
+                승인된 입력만으로는 결정·요구사항을 확정할 근거가 부족해, AI가 미결 질문 {version.questions.length}개만 남겼습니다.
+              </EmptyState>
+            ) : (
+              version.items.map((item) => <ItemCard key={item.key} item={item} inputsBase={inputsBase} />)
+            )}
+          </section>
+          <aside className="rail" aria-label="미결 질문과 최근 버전">
+            <QuestionRail questions={version.questions} inputsBase={inputsBase} canSubmit={role !== "VIEWER"} />
+            <RecentVersions versions={spec.recentVersions} historyHref={`${base}/spec/history`} />
+          </aside>
+        </div>
       )}
-      {spec.pendingInputCount > 0 && spec.status !== "FINALIZED" && (
-        <p className="meta">반영 대기 입력 {spec.pendingInputCount}개</p>
-      )}
-      {role === "ADMIN" && spec.version && (spec.status === "IDLE" || spec.status === "FINALIZED") && (
-        <p>
-          <FinalizeButton boardId={boardId} featureId={featureId} finalized={spec.status === "FINALIZED"} />
-        </p>
-      )}
-      {spec.finalizedAt && (
-        <p className="meta">
-          {spec.finalizedByName} 확정 · {new Date(spec.finalizedAt).toLocaleString("ko-KR")}
-        </p>
-      )}
-      {spec.version && (
-        <>
-          <SpecItemList items={spec.version.items} />
-          <OpenQuestionList questions={spec.version.questions} />
-        </>
-      )}
-    </main>
+    </div>
   );
 }

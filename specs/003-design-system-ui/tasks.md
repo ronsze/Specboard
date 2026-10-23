@@ -96,21 +96,21 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 1
 
-- [ ] T032 [P] [US1] `tests/integration/spec-view.test.ts`에 `getSpec` 확장 테스트를 작성한다: 항목의 `number`·`label`(D-1, R-1), `firstVersion`·`lastChangedVersion`·`change`, 출처의 `number`(IN-n)와 `status`, 질문의 `number`·`label`(Q-n)·`resolvedInVersion`, `counts`(결정·요구사항·열린·해소 질문), `recentVersions`(최대 3개, `isCurrent`), 갱신 중일 때 `progress.inputCount`, 실패일 때 `failure`(시도 횟수, 시각, 코드, 생성하려던 버전 번호), 확정 메시지에 해제 시 반영될 대기 입력 수 (FR-012, FR-022~FR-025)
-- [ ] T033 [P] [US1] `tests/e2e/spec-screen.spec.ts`를 작성한다: 항목 번호와 "vN부터" 표시, "출처 N" 클릭 → 출처 패널(입력 번호·종류·제출자·시각·승인) → "원문 전체 보기"까지 클릭 두 번 이내, 미결 질문 레일의 열림·해소 구분, 확정·갱신 중 상태 안내, 멤버에게는 확정·재시도 버튼이 보이지 않음 (시나리오 3~5, 17, 21)
+- [X] T032 [P] [US1] `tests/integration/spec-view.test.ts`에 `getSpec` 확장 테스트를 작성한다: 항목의 `number`·`label`(D-1, R-1), `firstVersion`·`lastChangedVersion`·`change`, 출처의 `number`(IN-n)와 `status`, 질문의 `number`·`label`(Q-n)·`resolvedInVersion`, `counts`(결정·요구사항·열린·해소 질문), `recentVersions`(최대 3개, `isCurrent`), 갱신 중일 때 `progress.inputCount`, 실패일 때 `failure`(시도 횟수, 시각, 코드, 생성하려던 버전 번호), 확정 메시지에 해제 시 반영될 대기 입력 수 (FR-012, FR-022~FR-025)
+- [X] T033 [P] [US1] `tests/e2e/spec-screen.spec.ts`를 작성한다: 항목 번호와 "vN부터" 표시, "출처 N" 클릭 → 출처 패널(입력 번호·종류·제출자·시각·승인) → "원문 전체 보기"까지 클릭 두 번 이내, 미결 질문 레일의 열림·해소 구분, 확정·갱신 중 상태 안내, 멤버에게는 확정·재시도 버튼이 보이지 않음 (시나리오 3~5, 17, 21)
 
 ### Implementation for User Story 1
 
-- [ ] T034 [US1] `src/server/services/spec-view.ts`를 확장한다: `ItemView`에 `number`·`label`·`firstVersion`·`lastChangedVersion`·`change`, `SourceRef`에 `number`·`status`·`quote`(null), `QuestionView`에 `number`·`label`(`Q-n`, 안정 번호)·`resolvedInVersion`, 버전 `counts`와 `isCurrent`. 기존 필드는 제거하지 않는다
-- [ ] T035 [US1] `src/server/services/spec.ts`의 `getSpec`을 확장한다: `computeProvenance`로 변경 버전 계산, `counts`, `recentVersions`(최근 3개), `progress`(반영 대기 입력 수, 배치 상한 적용), `failure`(최신 FAILED 작업의 시도 횟수·시각·코드·다음 버전 번호), 상태별 안내 문구(시안 10쪽: 갱신 중, 실패 — "마지막 성공 버전이 그대로 보이고 입력은 손실되지 않았음", 확정, 입력 없음 — 대기 입력 수 포함)를 반환해 T032를 통과시킨다
-- [ ] T036 [P] [US1] `src/components/spec/SpecHeaderCard.tsx`에 버전 카드(최신 배지, 버전·시각·생성 방식, "이력·비교" 링크, 관리자에게만 "이 버전 확정")를 만든다
-- [ ] T037 [P] [US1] `src/components/spec/StatusBanner.tsx`에 상태 안내(갱신 중 진행 막대와 "입력 N개를 읽고 있습니다", 실패 — 관리자는 "AI 갱신 다시 시도"·멤버/열람자는 안내만, 확정, 승인된 입력 없음 — "승인 대기 보기" 링크, 질문만 있고 항목이 없음 — "미결 질문 보기")과 반영 대기 입력 배너("다음 AI 갱신에 반영됩니다", "입력 보기" 링크)를 만든다 (FR-024, FR-025)
-- [ ] T038 [P] [US1] `src/components/spec/ItemCard.tsx`와 `SourcePanel.tsx`에 항목 카드(종류 배지, 번호, 문구, "AI 정리 · vN부터/vN에서 변경/vN에서 추가", "출처 N" 칩)와 출처 패널(`[n] IN-번호`, 종류, 제출자, 시각, 승인, 본문, "원문 전체 보기" 링크, 발췌 강조 자리)을 만든다. 펼침은 `aria-expanded`로 키보드 조작 가능
-- [ ] T039 [P] [US1] `src/components/spec/QuestionRail.tsx`에 미결 질문 레일(열림·해소 개수, 안내문, 질문 카드 Q-n, "해소됨" 구분선, 답이 된 입력 칩, 관련 입력 없음 문구, 멤버·관리자에게만 "질문에 답하는 입력 제출" 진입점 — 입력 화면의 제출 폼으로 이동하는 링크)을 만든다 (FR-026)
-- [ ] T040 [P] [US1] `src/components/spec/RecentVersions.tsx`와 `LockControl.tsx`에 최근 버전 카드와 확정 컨트롤(확정됨 배지·확정자·시각, 확정 확인 창, 확정 해제 확인 창 — 해제하면 곧바로 반영될 대기 입력 수 안내)을 만든다. 기존 `FinalizeButton`을 대체한다
-- [ ] T041 [US1] `src/app/boards/[boardId]/features/[featureId]/spec/page.tsx`를 시안 1쪽 구조(항목 영역 + 우측 질문 레일 + 최근 버전)로 다시 만들고, 갱신 중이면 자동 새로고침을 유지한다. 구 컴포넌트(`SpecItemList`, `OpenQuestionList`, `SourceList`, `FinalizeButton`, `RetryButton`)는 대체 후 제거한다
-- [ ] T042 [US1] `src/styles/components.css`에 spec 화면 반응형(`max-width: 720px`: 단일 컬럼, 질문 레일을 항목 위로)을 추가한다 (FR-009)
-- [ ] T043 [US1] 기존 `tests/e2e/spec-flow.spec.ts`를 새 화면에 맞게 갱신한다
+- [X] T034 [US1] `src/server/services/spec-view.ts`를 확장한다: `ItemView`에 `number`·`label`·`firstVersion`·`lastChangedVersion`·`change`, `SourceRef`에 `number`·`status`·`quote`(null), `QuestionView`에 `number`·`label`(`Q-n`, 안정 번호)·`resolvedInVersion`, 버전 `counts`와 `isCurrent`. 기존 필드는 제거하지 않는다
+- [X] T035 [US1] `src/server/services/spec.ts`의 `getSpec`을 확장한다: `computeProvenance`로 변경 버전 계산, `counts`, `recentVersions`(최근 3개), `progress`(반영 대기 입력 수, 배치 상한 적용), `failure`(최신 FAILED 작업의 시도 횟수·시각·코드·다음 버전 번호), 상태별 안내 문구(시안 10쪽: 갱신 중, 실패 — "마지막 성공 버전이 그대로 보이고 입력은 손실되지 않았음", 확정, 입력 없음 — 대기 입력 수 포함)를 반환해 T032를 통과시킨다
+- [X] T036 [P] [US1] `src/components/spec/SpecHeaderCard.tsx`에 버전 카드(최신 배지, 버전·시각·생성 방식, "이력·비교" 링크, 관리자에게만 "이 버전 확정")를 만든다
+- [X] T037 [P] [US1] `src/components/spec/StatusBanner.tsx`에 상태 안내(갱신 중 진행 막대와 "입력 N개를 읽고 있습니다", 실패 — 관리자는 "AI 갱신 다시 시도"·멤버/열람자는 안내만, 확정, 승인된 입력 없음 — "승인 대기 보기" 링크, 질문만 있고 항목이 없음 — "미결 질문 보기")과 반영 대기 입력 배너("다음 AI 갱신에 반영됩니다", "입력 보기" 링크)를 만든다 (FR-024, FR-025)
+- [X] T038 [P] [US1] `src/components/spec/ItemCard.tsx`와 `SourcePanel.tsx`에 항목 카드(종류 배지, 번호, 문구, "AI 정리 · vN부터/vN에서 변경/vN에서 추가", "출처 N" 칩)와 출처 패널(`[n] IN-번호`, 종류, 제출자, 시각, 승인, 본문, "원문 전체 보기" 링크, 발췌 강조 자리)을 만든다. 펼침은 `aria-expanded`로 키보드 조작 가능
+- [X] T039 [P] [US1] `src/components/spec/QuestionRail.tsx`에 미결 질문 레일(열림·해소 개수, 안내문, 질문 카드 Q-n, "해소됨" 구분선, 답이 된 입력 칩, 관련 입력 없음 문구, 멤버·관리자에게만 "질문에 답하는 입력 제출" 진입점 — 입력 화면의 제출 폼으로 이동하는 링크)을 만든다 (FR-026)
+- [X] T040 [P] [US1] `src/components/spec/RecentVersions.tsx`와 `LockControl.tsx`에 최근 버전 카드와 확정 컨트롤(확정됨 배지·확정자·시각, 확정 확인 창, 확정 해제 확인 창 — 해제하면 곧바로 반영될 대기 입력 수 안내)을 만든다. 기존 `FinalizeButton`을 대체한다
+- [X] T041 [US1] `src/app/boards/[boardId]/features/[featureId]/spec/page.tsx`를 시안 1쪽 구조(항목 영역 + 우측 질문 레일 + 최근 버전)로 다시 만들고, 갱신 중이면 자동 새로고침을 유지한다. 구 컴포넌트(`SpecItemList`, `OpenQuestionList`, `SourceList`, `FinalizeButton`, `RetryButton`)는 대체 후 제거한다
+- [X] T042 [US1] `src/styles/components.css`에 spec 화면 반응형(`max-width: 720px`: 단일 컬럼, 질문 레일을 항목 위로)을 추가한다 (FR-009)
+- [X] T043 [US1] 기존 `tests/e2e/spec-flow.spec.ts`를 새 화면에 맞게 갱신한다
 
 **Checkpoint**: spec 화면이 시안과 일치하고 독립적으로 동작
 
@@ -124,19 +124,19 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 2
 
-- [ ] T044 [P] [US2] `tests/integration/input-view.test.ts`에 `listInputsView` 테스트를 작성한다: 필터 4종(`all`, `mine-pending`, `reflect-pending`, `rejected`)이 가시성 규칙(관리자 전체, 그 외 승인·반려 + 본인 대기) 안에서 동작, `counts`가 각 필터 결과 수와 일치, `limit`/`cursor` 페이징과 `nextCursor`, 잘못된 filter·limit는 400, 입력에 `number`·`reflectedVersion`·`isMine` 포함, 비멤버 403 (FR-014, FR-016)
-- [ ] T045 [P] [US2] `tests/e2e/inputs-screen.spec.ts`를 작성한다: 필터 칩 선택이 주소(`?filter=`)에 반영되고 새로고침 후 유지, 긴 본문 "펼치기"와 전체 글자 수, 멤버 본인 대기 입력의 "나와 관리자에게만 보임", 반려 사유 박스, 제출 폼의 글자 수 카운터와 흐름 안내, 50,000자에 가까운 원문에서도 레이아웃이 깨지지 않고 접힘·펼침이 동작, 열람자에게는 폼 없음 (시나리오 10~12, 21)
+- [X] T044 [P] [US2] `tests/integration/input-view.test.ts`에 `listInputsView` 테스트를 작성한다: 필터 4종(`all`, `mine-pending`, `reflect-pending`, `rejected`)이 가시성 규칙(관리자 전체, 그 외 승인·반려 + 본인 대기) 안에서 동작, `counts`가 각 필터 결과 수와 일치, `limit`/`cursor` 페이징과 `nextCursor`, 잘못된 filter·limit는 400, 입력에 `number`·`reflectedVersion`·`isMine` 포함, 비멤버 403 (FR-014, FR-016)
+- [X] T045 [P] [US2] `tests/e2e/inputs-screen.spec.ts`를 작성한다: 필터 칩 선택이 주소(`?filter=`)에 반영되고 새로고침 후 유지, 긴 본문 "펼치기"와 전체 글자 수, 멤버 본인 대기 입력의 "나와 관리자에게만 보임", 반려 사유 박스, 제출 폼의 글자 수 카운터와 흐름 안내, 50,000자에 가까운 원문에서도 레이아웃이 깨지지 않고 접힘·펼침이 동작, 열람자에게는 폼 없음 (시나리오 10~12, 21)
 
 ### Implementation for User Story 2
 
-- [ ] T046 [US2] `src/server/services/inputs.ts`의 `InputDto`·`toDto`에 `number`, `reflectedVersion`(반영한 버전 번호, 없으면 null), `isMine`을 추가한다. 반영 버전 번호는 `consumedVersionId`로 조회하되 N+1 없이 한 번에 읽는다
-- [ ] T047 [US2] `src/server/services/inputs.ts`에 `listInputsView(user, boardId, featureId, { filter, limit, cursor })`를 구현해 T044를 통과시킨다. 기존 `listInputs`는 유지한다
-- [ ] T048 [US2] `src/app/api/boards/[boardId]/features/[featureId]/inputs/view/route.ts`에 GET을 계약대로 구현한다
-- [ ] T049 [P] [US2] `src/components/inputs/InputCard.tsx`에 입력 카드(종류·상태 배지, IN-번호, 제출자·시각, 원문 그대로, 승인자·시각 또는 "자동 승인 · 관리자 제출", "vN에 반영됨/반영 대기", 반려 사유 박스와 "spec에 쓰이지 않음", "나와 관리자에게만 보임", 긴 본문 접힘과 "펼치기 · 전체 N자")을 만든다 (FR-014, FR-015)
-- [ ] T050 [P] [US2] `src/components/inputs/InputFilters.tsx`(링크 기반 필터 칩과 개수)와 "이전 입력 N개 더 보기"(`cursor` 링크)를 만든다 (FR-016)
-- [ ] T051 [P] [US2] `src/components/inputs/SubmitInputForm.tsx`를 시안대로 다시 만든다: 종류 세그먼트(라디오 그룹), 본문과 `0 / 50,000` 카운터, "제출 후 흐름" 안내, 제출 오류 표시, 제출 후 목록 갱신 (FR-017)
-- [ ] T052 [US2] `src/app/boards/[boardId]/features/[featureId]/inputs/page.tsx`를 시안 5쪽의 2열 구조(제출 폼 + 필터·목록)로 다시 만들고, 열람자에게는 폼을 렌더링하지 않는다. 휴대폰 너비에서는 단일 컬럼으로 폼이 목록 위에 온다 (FR-009)
-- [ ] T053 [US2] 기존 `tests/e2e/submit-input.spec.ts`, `approve-reject.spec.ts`를 새 화면(승인 대기 흐름은 T060·T061 이후)에 맞게 갱신한다
+- [X] T046 [US2] `src/server/services/inputs.ts`의 `InputDto`·`toDto`에 `number`, `reflectedVersion`(반영한 버전 번호, 없으면 null), `isMine`을 추가한다. 반영 버전 번호는 `consumedVersionId`로 조회하되 N+1 없이 한 번에 읽는다
+- [X] T047 [US2] `src/server/services/inputs.ts`에 `listInputsView(user, boardId, featureId, { filter, limit, cursor })`를 구현해 T044를 통과시킨다. 기존 `listInputs`는 유지한다
+- [X] T048 [US2] `src/app/api/boards/[boardId]/features/[featureId]/inputs/view/route.ts`에 GET을 계약대로 구현한다
+- [X] T049 [P] [US2] `src/components/inputs/InputCard.tsx`에 입력 카드(종류·상태 배지, IN-번호, 제출자·시각, 원문 그대로, 승인자·시각 또는 "자동 승인 · 관리자 제출", "vN에 반영됨/반영 대기", 반려 사유 박스와 "spec에 쓰이지 않음", "나와 관리자에게만 보임", 긴 본문 접힘과 "펼치기 · 전체 N자")을 만든다 (FR-014, FR-015)
+- [X] T050 [P] [US2] `src/components/inputs/InputFilters.tsx`(링크 기반 필터 칩과 개수)와 "이전 입력 N개 더 보기"(`cursor` 링크)를 만든다 (FR-016)
+- [X] T051 [P] [US2] `src/components/inputs/SubmitInputForm.tsx`를 시안대로 다시 만든다: 종류 세그먼트(라디오 그룹), 본문과 `0 / 50,000` 카운터, "제출 후 흐름" 안내, 제출 오류 표시, 제출 후 목록 갱신 (FR-017)
+- [X] T052 [US2] `src/app/boards/[boardId]/features/[featureId]/inputs/page.tsx`를 시안 5쪽의 2열 구조(제출 폼 + 필터·목록)로 다시 만들고, 열람자에게는 폼을 렌더링하지 않는다. 휴대폰 너비에서는 단일 컬럼으로 폼이 목록 위에 온다 (FR-009)
+- [X] T053 [US2] 기존 `tests/e2e/submit-input.spec.ts`, `approve-reject.spec.ts`를 새 화면(승인 대기 흐름은 T060·T061 이후)에 맞게 갱신한다
 
 **Checkpoint**: US1 + US2로 핵심 두 화면이 시안과 일치
 
@@ -150,17 +150,17 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 3
 
-- [ ] T054 [P] [US3] `tests/integration/board-pending.test.ts`에 테스트를 작성한다: 두 feature의 대기 입력이 한 목록에 오래된 순으로 나오고 프로젝트·feature 이름 포함, `feature` 필터, 승인·반려 후 목록과 개수 감소, 개수 0, 관리자 외(멤버·열람자·비멤버)는 403, 다른 보드의 입력은 섞이지 않음, 이미 처리된 입력 처리 시 409 (FR-018~FR-020)
-- [ ] T055 [P] [US3] `tests/e2e/board-pending.spec.ts`를 작성한다: 서로 다른 feature의 입력 승인·반려를 한 화면에서 처리, 반려 사유 비면 확정 불가·취소 가능, 상단 배지 숫자 갱신과 0일 때 숫자 숨김, 100개 이상일 때 "99+" 표시, 멤버에게는 메뉴·배지 없음 (시나리오 13, 14, 21)
+- [X] T054 [P] [US3] `tests/integration/board-pending.test.ts`에 테스트를 작성한다: 두 feature의 대기 입력이 한 목록에 오래된 순으로 나오고 프로젝트·feature 이름 포함, `feature` 필터, 승인·반려 후 목록과 개수 감소, 개수 0, 관리자 외(멤버·열람자·비멤버)는 403, 다른 보드의 입력은 섞이지 않음, 이미 처리된 입력 처리 시 409 (FR-018~FR-020)
+- [X] T055 [P] [US3] `tests/e2e/board-pending.spec.ts`를 작성한다: 서로 다른 feature의 입력 승인·반려를 한 화면에서 처리, 반려 사유 비면 확정 불가·취소 가능, 상단 배지 숫자 갱신과 0일 때 숫자 숨김, 100개 이상일 때 "99+" 표시, 멤버에게는 메뉴·배지 없음 (시나리오 13, 14, 21)
 
 ### Implementation for User Story 3
 
-- [ ] T056 [US3] `src/server/services/board-pending.ts`에 `listBoardPending(user, boardId, { featureId })`와 `countBoardPending(user, boardId)`를 구현한다: ADMIN만, `Input.boardId` 인덱스로 한 쿼리, 프로젝트·feature 이름 join, 제출 시각 오름차순 — T054를 통과시킨다
-- [ ] T057 [US3] `src/app/api/boards/[boardId]/pending/route.ts`와 `pending/count/route.ts`를 계약대로 구현한다
-- [ ] T058 [US3] T030의 헤더에 실제 대기 수를 연결한다(관리자만, 0이면 숫자 숨김, 100 이상이면 "99+")
-- [ ] T059 [P] [US3] `src/components/inputs/RejectForm.tsx`에 반려 사유 폼(필수, "제출자에게 그대로 보임" 안내, 취소, 반려 확정, 빈 사유 거부)과 `ApprovalActions.tsx`(승인, 반려…, 이미 처리됨 안내와 목록 갱신)를 만든다 (FR-020)
-- [ ] T060 [US3] `src/app/boards/[boardId]/pending/page.tsx`에 시안 6쪽의 보드 단위 승인 대기 화면을 만든다(feature 링크, 긴 본문 펼치기, `?feature=` 필터). 멤버·열람자는 `ForbiddenView`
-- [ ] T061 [US3] `src/app/boards/[boardId]/features/[featureId]/inputs/pending/page.tsx`를 `/boards/[boardId]/pending?feature=[featureId]` 리다이렉트로 바꾸고 기존 `DecisionButtons`를 제거한다
+- [X] T056 [US3] `src/server/services/board-pending.ts`에 `listBoardPending(user, boardId, { featureId })`와 `countBoardPending(user, boardId)`를 구현한다: ADMIN만, `Input.boardId` 인덱스로 한 쿼리, 프로젝트·feature 이름 join, 제출 시각 오름차순 — T054를 통과시킨다
+- [X] T057 [US3] `src/app/api/boards/[boardId]/pending/route.ts`와 `pending/count/route.ts`를 계약대로 구현한다
+- [X] T058 [US3] T030의 헤더에 실제 대기 수를 연결한다(관리자만, 0이면 숫자 숨김, 100 이상이면 "99+")
+- [X] T059 [P] [US3] `src/components/inputs/RejectForm.tsx`에 반려 사유 폼(필수, "제출자에게 그대로 보임" 안내, 취소, 반려 확정, 빈 사유 거부)과 `ApprovalActions.tsx`(승인, 반려…, 이미 처리됨 안내와 목록 갱신)를 만든다 (FR-020)
+- [X] T060 [US3] `src/app/boards/[boardId]/pending/page.tsx`에 시안 6쪽의 보드 단위 승인 대기 화면을 만든다(feature 링크, 긴 본문 펼치기, `?feature=` 필터). 멤버·열람자는 `ForbiddenView`
+- [X] T061 [US3] `src/app/boards/[boardId]/features/[featureId]/inputs/pending/page.tsx`를 `/boards/[boardId]/pending?feature=[featureId]` 리다이렉트로 바꾸고 기존 `DecisionButtons`를 제거한다
 
 ---
 

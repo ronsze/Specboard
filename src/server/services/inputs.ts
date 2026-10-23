@@ -1,4 +1,4 @@
-import type { Input, InputStatus } from "@prisma/client";
+import type { Input, InputStatus, Prisma } from "@prisma/client";
 import type { ZodType } from "zod";
 import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
@@ -25,9 +25,15 @@ export type InputDto = {
   rejectionReason: string | null;
   /** 승인된 입력이 spec 버전에 반영되었는지 (승인 전·반려는 false) */
   reflectedInSpec: boolean;
+  /** 반영된 spec 버전 번호 (아직 반영 전이면 null) */
+  reflectedVersion: number | null;
+  /** 로그인한 사용자가 제출한 입력인가 */
+  isMine: boolean;
 };
 
-export function toDto(i: Input): InputDto {
+export type DtoContext = { userId?: string; versionNumbers?: Map<string, number> };
+
+export function toDto(i: Input, ctx: DtoContext = {}): InputDto {
   return {
     id: i.id,
     number: i.number,
@@ -42,6 +48,8 @@ export function toDto(i: Input): InputDto {
     decidedAt: i.decidedAt?.toISOString() ?? null,
     rejectionReason: i.rejectionReason,
     reflectedInSpec: i.consumedAt !== null,
+    reflectedVersion: i.consumedVersionId ? (ctx.versionNumbers?.get(i.consumedVersionId) ?? null) : null,
+    isMine: ctx.userId !== undefined && i.submittedBy === ctx.userId,
   };
 }
 
@@ -90,6 +98,14 @@ export async function submitInput(
   return toDto(input);
 }
 
+async function dtoContext(userId: string, inputs: Input[]): Promise<DtoContext> {
+  const ids = [...new Set(inputs.map((i) => i.consumedVersionId).filter((v): v is string => v !== null))];
+  const versions = ids.length
+    ? await db.specVersion.findMany({ where: { id: { in: ids } }, select: { id: true, number: true } })
+    : [];
+  return { userId, versionNumbers: new Map(versions.map((v) => [v.id, v.number])) };
+}
+
 /**
  * ADMIN은 전체, 그 외는 승인·반려 입력과 본인이 제출한 대기 입력만 본다 (FR-021).
  * 비관리자가 status=PENDING을 지정하면 거부한다.
@@ -114,7 +130,8 @@ export async function listInputs(
     where: { featureId, ...(statusFilter && { status: statusFilter }), ...visibility },
     orderBy: { submittedAt: "desc" },
   });
-  return inputs.map(toDto);
+  const ctx = await dtoContext(user.id, inputs);
+  return inputs.map((i) => toDto(i, ctx));
 }
 
 async function decide(
@@ -159,7 +176,7 @@ export async function listPendingInputs(user: Actor, boardId: string, featureId:
     where: { featureId, status: "PENDING" },
     orderBy: { submittedAt: "asc" },
   });
-  return inputs.map(toDto);
+  return inputs.map((i) => toDto(i));
 }
 
 /** AI spec 작성에 사용 가능한 입력: 승인된 입력만 반환하는 단일 질의 (FR-010). */
@@ -170,5 +187,66 @@ export async function listApprovedInputs(user: Actor, boardId: string, featureId
     where: { featureId, status: "APPROVED" },
     orderBy: { submittedAt: "asc" },
   });
-  return inputs.map(toDto);
+  return inputs.map((i) => toDto(i));
+}
+
+export const INPUT_FILTERS = ["all", "mine-pending", "reflect-pending", "rejected"] as const;
+export type InputFilter = (typeof INPUT_FILTERS)[number];
+
+export type InputView = {
+  inputs: InputDto[];
+  counts: { all: number; minePending: number; reflectPending: number; rejected: number };
+  nextCursor: string | null;
+};
+
+const MAX_VIEW_LIMIT = 100;
+
+/**
+ * 입력 목록 뷰: 필터, 개수, 페이지. 가시성 규칙(관리자 전체, 그 외 승인·반려 + 본인 대기, FR-021)을
+ * 필터와 개수 모두에 적용한다.
+ */
+export async function listInputsView(
+  user: Actor,
+  boardId: string,
+  featureId: string,
+  opts: { filter?: string; limit?: number; cursor?: string } = {},
+): Promise<InputView> {
+  const role = await requireRole(user.id, boardId, ALL_ROLES);
+  await assertFeatureInBoard(boardId, featureId);
+  const filter = opts.filter ?? "all";
+  if (!(INPUT_FILTERS as readonly string[]).includes(filter)) throw new ValidationError("filter 값이 올바르지 않습니다.");
+  const limit = opts.limit ?? 20;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_VIEW_LIMIT) {
+    throw new ValidationError(`limit은 1 이상 ${MAX_VIEW_LIMIT} 이하의 정수여야 합니다.`);
+  }
+
+  const visible: Prisma.InputWhereInput =
+    role === "ADMIN" ? { featureId } : { featureId, OR: [{ status: { not: "PENDING" } }, { submittedBy: user.id }] };
+  const byFilter: Record<InputFilter, Prisma.InputWhereInput> = {
+    all: {},
+    "mine-pending": { status: "PENDING", submittedBy: user.id },
+    "reflect-pending": { status: "APPROVED", consumedAt: null },
+    rejected: { status: "REJECTED" },
+  };
+
+  const [rows, all, minePending, reflectPending, rejected] = await Promise.all([
+    db.input.findMany({
+      where: { AND: [visible, byFilter[filter as InputFilter]] },
+      orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
+    }),
+    db.input.count({ where: visible }),
+    db.input.count({ where: { AND: [visible, byFilter["mine-pending"]] } }),
+    db.input.count({ where: { AND: [visible, byFilter["reflect-pending"]] } }),
+    db.input.count({ where: { AND: [visible, byFilter.rejected] } }),
+  ]);
+
+  const page = rows.slice(0, limit);
+  const ctx = await dtoContext(user.id, page);
+  return {
+    inputs: page.map((i) => toDto(i, ctx)),
+    counts: { all, minePending, reflectPending, rejected },
+    nextCursor: rows.length > limit ? page[page.length - 1].id : null,
+  };
 }

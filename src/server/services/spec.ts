@@ -1,7 +1,7 @@
 import { db } from "@/server/db/client";
 import { ALL_ROLES, requireRole } from "@/server/authz/authorize";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
-import { recoverStaleJobs, scheduleSpecUpdate, unconsumedApproved } from "@/server/services/spec-jobs";
+import { recoverStaleJobs, scheduleSpecUpdate, takeBatch, unconsumedApproved } from "@/server/services/spec-jobs";
 import { diffVersions, type Diff } from "@/server/services/spec-diff";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { deriveSpecStatus, type SpecStatus } from "@/server/services/spec-status";
@@ -9,12 +9,14 @@ import { Prisma } from "@prisma/client";
 import { parse } from "@/server/services/inputs";
 import { revertSchema } from "@/lib/schemas/spec";
 import {
+  summaryInclude,
   toVersionDetail,
   toVersionSummary,
   versionInclude,
   type VersionDetail,
   type VersionSummary,
 } from "@/server/services/spec-view";
+import { computeProvenance } from "@/server/services/spec-provenance";
 
 export type SpecView = {
   status: SpecStatus;
@@ -22,15 +24,22 @@ export type SpecView = {
   finalizedByName: string | null;
   finalizedAt: string | null;
   pendingInputCount: number;
+  /** 갱신 중일 때: 이번 갱신이 읽는 입력 수 */
+  progress: { inputCount: number } | null;
+  /** 갱신 실패일 때: 마지막 실패 정보 (마지막 성공 버전은 그대로 version에 담긴다) */
+  failure: { attempts: number; at: string; code: string | null; nextVersion: number } | null;
   version: VersionDetail | null;
+  recentVersions: VersionSummary[];
 };
 
-const FAILURE_MESSAGES: Record<string, string> = {
-  REFUSED: "AI가 요청을 처리하지 못했습니다. 관리자가 다시 시도할 수 있습니다.",
-  INVALID_OUTPUT: "AI 결과가 출처 규칙을 통과하지 못해 반영하지 않았습니다. 관리자가 다시 시도할 수 있습니다.",
-  API_ERROR: "AI 호출에 실패했습니다. 관리자가 다시 시도할 수 있습니다.",
-  TIMEOUT: "AI 응답이 지연되어 반영하지 못했습니다. 관리자가 다시 시도할 수 있습니다.",
+const FAILURE_REASONS: Record<string, string> = {
+  REFUSED: "AI가 요청을 처리하지 못했습니다.",
+  INVALID_OUTPUT: "AI 결과가 출처 규칙을 통과하지 못해 반영하지 않았습니다.",
+  API_ERROR: "AI 호출에 실패했습니다.",
+  TIMEOUT: "AI 응답이 지연되어 반영하지 못했습니다.",
 };
+const failureMessage = (code: string | null) =>
+  `${FAILURE_REASONS[code ?? ""] ?? "spec 갱신에 실패했습니다."} 마지막으로 성공한 spec이 그대로 보이며 입력은 손실되지 않았습니다. 관리자가 다시 시도할 수 있습니다.`;
 
 /** 현재 spec과 상태. 전 역할 열람 가능, 비멤버는 거부 (FR-001, FR-021, FR-024, FR-025). */
 export async function getSpec(
@@ -42,23 +51,60 @@ export async function getSpec(
   await assertFeatureInBoard(boardId, featureId);
   await recoverStaleJobs(featureId);
 
+  // 작업 상태를 먼저 읽는다. 작업은 입력 소비·버전 저장을 마친 뒤에 DONE이 되므로,
+  // 작업이 끝난 것을 본 다음에 읽는 입력·버전에는 반드시 그 결과가 반영되어 있다
+  // (반대 순서로 읽으면 "작업 없음 + 아직 반영 안 된 입력"이라는 어긋난 화면이 나올 수 있다).
+  const activeJob = await db.specJob.findFirst({ where: { featureId, status: { in: ["QUEUED", "RUNNING"] } } });
+  const latestJob = await db.specJob.findFirst({ where: { featureId }, orderBy: { createdAt: "desc" } });
+
   const spec = await db.spec.findUnique({
     where: { featureId },
     include: { versions: { orderBy: { number: "desc" }, take: 1, include: versionInclude } },
   });
-  const pendingInputCount = await db.input.count({ where: unconsumedApproved(featureId) });
+  const pending = await db.input.findMany({
+    where: unconsumedApproved(featureId),
+    orderBy: [{ decidedAt: "asc" }, { id: "asc" }],
+    select: { id: true, content: true },
+  });
+  const pendingInputCount = pending.length;
   const latestVersion = spec?.versions[0] ?? null;
-  const version = latestVersion ? toVersionDetail(latestVersion) : null;
+
+  let version: VersionDetail | null = null;
+  let recentVersions: VersionSummary[] = [];
+  if (spec && latestVersion) {
+    const [itemRows, questionRows, recent] = await Promise.all([
+      db.specItem.findMany({
+        where: { version: { specId: spec.id } },
+        select: { key: true, text: true, version: { select: { number: true } } },
+      }),
+      db.openQuestion.findMany({
+        where: { version: { specId: spec.id } },
+        select: { key: true, status: true, version: { select: { number: true } } },
+      }),
+      db.specVersion.findMany({
+        where: { specId: spec.id },
+        orderBy: { number: "desc" },
+        take: 3,
+        include: summaryInclude,
+      }),
+    ]);
+    const provenance = computeProvenance(
+      itemRows.map((r) => ({ key: r.key, text: r.text, versionNumber: r.version.number })),
+      questionRows.map((r) => ({ key: r.key, status: r.status, versionNumber: r.version.number })),
+      latestVersion.number,
+    );
+    version = toVersionDetail(latestVersion, provenance, true);
+    recentVersions = recent.map((v) => toVersionSummary(v, v.number === latestVersion.number));
+  }
 
   const base = {
     finalizedByName: spec?.finalizedByName ?? null,
     finalizedAt: spec?.finalizedAt?.toISOString() ?? null,
     pendingInputCount,
     version,
+    recentVersions,
   };
 
-  const activeJob = await db.specJob.findFirst({ where: { featureId, status: { in: ["QUEUED", "RUNNING"] } } });
-  const latestJob = await db.specJob.findFirst({ where: { featureId }, orderBy: { createdAt: "desc" } });
   const status = deriveSpecStatus({
     finalized: Boolean(spec?.finalizedAt),
     activeJob: Boolean(activeJob),
@@ -73,11 +119,25 @@ export async function getSpec(
         ? `확정 상태입니다. 반영 대기 입력 ${pendingInputCount}개는 확정을 해제하면 반영됩니다.`
         : null,
     UPDATING: "AI가 spec을 갱신하고 있습니다.",
-    FAILED: FAILURE_MESSAGES[latestJob?.lastError ?? ""] ?? "spec 갱신에 실패했습니다.",
+    FAILED: failureMessage(latestJob?.lastError ?? null),
     NONE: "승인된 입력이 아직 없습니다.",
     IDLE: null,
   };
-  return { ...base, status, message: messages[status] };
+  return {
+    ...base,
+    status,
+    message: messages[status],
+    progress: status === "UPDATING" ? { inputCount: takeBatch(pending).length } : null,
+    failure:
+      status === "FAILED" && latestJob
+        ? {
+            attempts: latestJob.attempts,
+            at: latestJob.updatedAt.toISOString(),
+            code: latestJob.lastError,
+            nextVersion: (latestVersion?.number ?? 0) + 1,
+          }
+        : null,
+  };
 }
 
 async function readableSpec(user: { id: string }, boardId: string, featureId: string) {
@@ -97,9 +157,9 @@ export async function listVersions(
   const versions = await db.specVersion.findMany({
     where: { specId: spec.id },
     orderBy: { number: "desc" },
-    include: { inputs: true },
+    include: summaryInclude,
   });
-  return versions.map(toVersionSummary);
+  return versions.map((v, i) => toVersionSummary(v, i === 0));
 }
 
 export async function getVersion(
@@ -223,8 +283,8 @@ export async function revertSpec(
       });
     }
     await tx.spec.update({ where: { id: spec.id }, data: { currentVersionId: created.id } });
-    return toVersionSummary({ ...created, inputs: [] });
-  });
+    return toVersionSummary({ ...created, inputs: [] }, true);
+  }, { timeout: 30_000, maxWait: 10_000 });
 }
 
 /** spec 확정 (관리자 전용). 확정 중에는 새 입력이 승인되어도 새 버전이 만들어지지 않는다 (FR-017, FR-018). */

@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import { diffVersions } from "@/server/services/spec-diff";
 import type { ItemView, QuestionView, VersionDetail } from "@/server/services/spec-view";
 
-const item = (key: string, text: string): ItemView => ({ key, kind: "REQUIREMENT", text, sources: [] });
+const item = (key: string, text: string): ItemView => ({
+  key, kind: "REQUIREMENT", number: 1, label: "R-1", text, firstVersion: 1, lastChangedVersion: 1, change: "NONE", sources: [],
+});
 const question = (key: string, text: string, status: "OPEN" | "RESOLVED" = "OPEN"): QuestionView => ({
-  key, text, status, sources: [], resolvedBy: null,
+  key, number: 1, label: "Q-1", text, status, resolvedInVersion: null, sources: [], resolvedBy: null,
 });
 const version = (number: number, items: ItemView[], questions: QuestionView[] = []): VersionDetail => ({
   number, kind: "AI_UPDATE", revertedFromNumber: null, createdByName: null,
-  createdAt: new Date().toISOString(), inputIds: [], items, questions,
+  createdAt: new Date().toISOString(), inputIds: [], inputs: [], isCurrent: false, items, questions,
+  counts: { decisions: 0, requirements: items.length, openQuestions: 0, resolvedQuestions: 0 },
 });
 
 describe("diffVersions", () => {
