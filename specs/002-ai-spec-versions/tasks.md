@@ -162,12 +162,12 @@ description: "AI spec 생성과 버전 이력 구현 태스크"
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T051 [P] `tests/integration/spec-authz.test.ts`에 spec 서비스 전 함수의 권한 매트릭스(data-model.md: 열람은 전 역할, 되돌리기·확정·해제·재시도는 ADMIN, 비멤버 전부 거부)를 한 번에 점검하고, 모든 spec 서비스 함수가 `requireRole`을 거치는지 확인한다 (FR-022, SC-009)
-- [ ] T052 [P] `tests/e2e/spec-flow.spec.ts`에 가짜 AI(`SPEC_WRITER=fake`)로 멤버 제출 → 관리자 승인 → spec 화면에 항목과 출처 표시 → 이력 비교 → 되돌리기 → 확정 → 새 입력은 반영 대기 → 해제 후 반영하는 E2E를 작성한다
-- [ ] T053 [P] 응답 시간 점검: 열람 API 서비스 함수(`getSpec`, `listVersions`, `diff`)의 p95가 300ms 이내인지 확인하는 통합 테스트를 `tests/integration/spec-latency.test.ts`에 추가한다 (plan.md)
-- [ ] T054 [P] `specs/002-ai-spec-versions/quickstart.md`의 "실행" 절을 실제 스크립트 명령(`SPEC_WRITER=fake`, `test:live` 포함)으로 갱신한다
+- [X] T051 [P] `tests/integration/spec-authz.test.ts`에 spec 서비스 전 함수의 권한 매트릭스(data-model.md: 열람은 전 역할, 되돌리기·확정·해제·재시도는 ADMIN, 비멤버 전부 거부)를 한 번에 점검하고, 모든 spec 서비스 함수가 `requireRole`을 거치는지 확인한다 (FR-022, SC-009)
+- [X] T052 [P] `tests/e2e/spec-flow.spec.ts`에 가짜 AI(`SPEC_WRITER=fake`)로 멤버 제출 → 관리자 승인 → spec 화면에 항목과 출처 표시 → 이력 비교 → 되돌리기 → 확정 → 새 입력은 반영 대기 → 해제 후 반영하는 E2E를 작성한다
+- [X] T053 [P] 응답 시간 점검: 열람 API 서비스 함수(`getSpec`, `listVersions`, `diff`)의 p95가 300ms 이내인지 확인하는 통합 테스트를 `tests/integration/spec-latency.test.ts`에 추가한다 (plan.md)
+- [X] T054 [P] `specs/002-ai-spec-versions/quickstart.md`의 "실행" 절을 실제 스크립트 명령(`SPEC_WRITER=fake`, `test:live` 포함)으로 갱신한다
 - [ ] T055 실제 Claude로 한 번 끝까지 실행해(키가 있을 때) 입력 승인 후 새 버전이 열람 가능해지기까지의 시간이 목표(95%가 2분 이내, SC-001)에 맞는지 측정하고, 느리면 `SPEC_MODEL`·effort·반영 입력 상한을 조정해 근거를 quickstart.md에 기록한다
-- [ ] T056 quickstart.md 시나리오 1~20을 처음부터 끝까지 수행해 결과를 확인한다
+- [X] T056 quickstart.md 시나리오 1~20을 처음부터 끝까지 수행해 결과를 확인한다
 
 ---
 

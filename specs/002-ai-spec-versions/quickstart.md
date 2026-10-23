@@ -5,8 +5,11 @@
 - 실제 Claude로 확인하려면 `.env`에 `ANTHROPIC_API_KEY`를 추가(저장소에 커밋하지 않는다). 키가 없으면 가짜 AI(`SPEC_WRITER=fake`)로 동작을 확인한다
 - 선택: `SPEC_MODEL`로 모델 교체(기본 `claude-opus-5-5`)
 
-## 실행 (구현 후)
-구체 명령은 구현 단계에서 `package.json` 스크립트로 확정하고 이 문서에 반영한다. 테스트는 `npm test`(가짜 AI + 실제 PostgreSQL), 실제 Claude 점검은 키가 있을 때만 도는 별도 스위트로 분리한다.
+## 실행
+1. 001의 실행 준비(`npm install`, `npm run db:up`, `npm run db:migrate`, `npm run db:seed`)를 마친다. 새 마이그레이션은 `db:migrate`가 적용한다
+2. 키 없이 동작을 보려면 `.env`에 `SPEC_WRITER=fake`를 둔다(결정적인 가짜 AI: "?"로 끝나는 입력은 미결 질문, "답:"으로 시작하면 질문 해소, 그 외는 항목으로 추가). 실제 Claude를 쓰려면 `SPEC_WRITER=claude`와 `ANTHROPIC_API_KEY`(저장소에 커밋하지 않는다), 선택으로 `SPEC_MODEL`(기본 `claude-opus-5-5`)을 설정한다
+3. `npm run dev` 후 입력을 제출·승인하면 feature의 "spec 보기"에서 결과를 본다
+4. 테스트: `npm test`(가짜 AI + 실제 PostgreSQL), E2E `npm run test:e2e`(`SPEC_WRITER=fake`로 서버를 띄운다), 실제 Claude 점검 `npm run test:live`(키가 있을 때만 실행되고 비용이 발생한다)
 
 ## 검증 시나리오
 
@@ -34,3 +37,18 @@
 | 20 | 갱신 중에 관리자가 되돌리기·확정 | AI 결과가 덮어쓰지 않고 폐기·재큐 | 설계 규칙 |
 
 계약 상세: [contracts/openapi.yaml](contracts/openapi.yaml), 데이터 규칙: [data-model.md](data-model.md)
+
+## 자동화 매핑
+
+| 시나리오 | 검증하는 테스트 |
+|---|---|
+| 1~4 | `spec-jobs.test.ts`, `spec-jobs-concurrency.test.ts` |
+| 5~7 | `spec-sources.test.ts`, `spec-questions.test.ts`, `validate-output.test.ts` |
+| 8, 16 | `spec-jobs-failure.test.ts` |
+| 9, 19 | `spec-history.test.ts`, `diff.test.ts` |
+| 10~12 | `spec-revert.test.ts`, `spec-authz.test.ts` |
+| 13~15 | `spec-finalize.test.ts` |
+| 17, 18 | `spec-status.test.ts` |
+| 20 | `spec-midflight.test.ts`, `spec-finalize-midflight.test.ts` |
+| 화면 흐름 전체 | `tests/e2e/spec-flow.spec.ts` |
+| 실제 Claude 품질(SC-002, SC-004) | `tests/live/spec-writer.live.test.ts` (키 필요) |
