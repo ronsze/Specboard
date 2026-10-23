@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { writerOutputSchema } from "@/lib/schemas/spec";
+import { modelOutputSchema } from "@/lib/schemas/spec";
 import {
   SpecWriterError,
   type SpecWriter,
@@ -22,7 +22,8 @@ export const SYSTEM_PROMPT = `당신은 팀의 회의 기록과 아이디어를 
 5. 새 항목과 새 질문의 key는 null로 두세요.
 6. 새 입력이 열려 있는 질문에 답하면 그 질문의 status를 RESOLVED로, resolvedByInputId를 그 입력 id로 바꾸고, 답의 내용은 별도 항목으로 추가하세요. 해소된 질문은 다시 열지 마세요.
 7. 항목 kind는 합의된 방향이면 DECISION, 시스템이 지켜야 할 조건이면 REQUIREMENT입니다.
-8. 항목은 한 문장 내외로 간결하게, 입력의 표현을 존중해 쓰세요.`;
+8. 항목은 한 문장 내외로 간결하게, 입력의 표현을 존중해 쓰세요.
+9. 새로 인용하는 출처마다 quotes에 {inputId, quote}를 한 개씩 다세요. quote는 그 입력 원문에서 글자 그대로 복사한 한 문장(500자 이하)이며, 요약·수정·번역하지 마세요. 확실하지 않거나 원문에서 정확히 복사할 수 없으면 quotes에 넣지 말고 비워 두세요. 이미 있던 출처를 다시 인용하지 않는 기존 항목은 quotes를 비워 두세요.`;
 
 export function buildUserMessage(request: WriterRequest): string {
   const items = request.items.map((i) => ({ key: i.key, kind: i.kind, text: i.text, sourceInputIds: i.sourceInputIds }));
@@ -72,7 +73,7 @@ export class ClaudeSpecWriter implements SpecWriter {
         betas: ["server-side-fallback-2026-07-01"],
         fallbacks: "default",
         system: SYSTEM_PROMPT,
-        output_config: { effort: "medium", format: zodOutputFormat(writerOutputSchema) },
+        output_config: { effort: "medium", format: zodOutputFormat(modelOutputSchema) },
         messages: [{ role: "user", content: buildUserMessage(request) }],
       });
       const message = await stream.finalMessage();

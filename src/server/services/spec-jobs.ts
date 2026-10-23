@@ -14,6 +14,7 @@ import {
 import { validateSpecOutput } from "@/server/ai/validate-output";
 import { getSpecWriter } from "@/server/ai";
 import { allocateItemNumber, allocateQuestionNumber } from "@/server/services/numbering";
+import { locateQuote } from "@/server/services/quotes";
 
 export const MAX_BATCH_INPUTS = 20;
 export const MAX_BATCH_CHARS = 150_000;
@@ -219,6 +220,35 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
     // 기존 key는 직전 버전의 번호를 그대로 쓰고, 새 key에만 새 번호를 부여한다 (안정 번호)
     const itemNumbers = new Map((base?.items ?? []).map((i) => [i.key, i.number]));
     const questionNumbers = new Map((base?.questions ?? []).map((q) => [q.key, q.number]));
+
+    // 발췌: 이번에 반영하는 입력(batch)에 대해서만 새로 검증하고, 같은 출처를 다시 인용하지 않은
+    // 기존 항목·질문은 직전 버전의 발췌를 유지한다. 원문에 없는 발췌는 버리며 작업은 실패시키지 않는다.
+    const contentById = new Map(batch.map((i) => [i.id, i.content]));
+    type Range = { quoteStart: number; quoteEnd: number };
+    const carried = (rows: { key: string; sources: { inputId: string; quoteStart: number | null; quoteEnd: number | null }[] }[]) => {
+      const map = new Map<string, Range>();
+      for (const r of rows) {
+        for (const src of r.sources) {
+          if (src.quoteStart !== null && src.quoteEnd !== null) map.set(`${r.key}:${src.inputId}`, { quoteStart: src.quoteStart, quoteEnd: src.quoteEnd });
+        }
+      }
+      return map;
+    };
+    const itemCarry = carried(base?.items ?? []);
+    const questionCarry = carried(base?.questions ?? []);
+    const sourcesWithQuotes = (
+      key: string,
+      sourceInputIds: string[],
+      quotes: { inputId: string; quote: string }[] | undefined,
+      carry: Map<string, Range>,
+    ) =>
+      [...new Set(sourceInputIds)].map((inputId) => {
+        const declared = quotes?.find((q) => q.inputId === inputId);
+        const content = contentById.get(inputId);
+        const located = declared && content !== undefined ? locateQuote(content, declared.quote) : null;
+        const range = located ? { quoteStart: located.start, quoteEnd: located.end } : (carry.get(`${key}:${inputId}`) ?? null);
+        return { inputId, quoteStart: range?.quoteStart ?? null, quoteEnd: range?.quoteEnd ?? null };
+      });
     for (const [position, item] of output.items.entries()) {
       const number = itemNumbers.get(item.key!) ?? (await allocateItemNumber(tx, target.id, item.kind));
       await tx.specItem.create({
@@ -229,7 +259,7 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
           text: item.text,
           position,
           number,
-          sources: { create: [...new Set(item.sourceInputIds)].map((inputId) => ({ inputId })) },
+          sources: { create: sourcesWithQuotes(item.key!, item.sourceInputIds, item.quotes, itemCarry) },
         },
       });
     }
@@ -244,7 +274,7 @@ export async function runSpecJob(job: SpecJob, writer: SpecWriter): Promise<RunR
           resolvedByInputId: q.resolvedByInputId,
           position,
           number,
-          sources: { create: [...new Set(q.sourceInputIds)].map((inputId) => ({ inputId })) },
+          sources: { create: sourcesWithQuotes(q.key!, q.sourceInputIds, q.quotes, questionCarry) },
         },
       });
     }

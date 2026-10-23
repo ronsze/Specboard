@@ -37,7 +37,9 @@ describe("getSpec 확장 (시나리오 3~5, 17)", () => {
   it("출처에 입력 번호(IN-n)와 승인 상태가 있다", async () => {
     const a = await add("첫 입력");
     const { version } = await spec();
-    expect(version!.items[0].sources[0]).toMatchObject({ inputId: a.id, number: a.number, status: "APPROVED", quote: null });
+    expect(version!.items[0].sources[0]).toMatchObject({ inputId: a.id, number: a.number, status: "APPROVED" });
+    // 가짜 AI는 본문 첫 문장을 발췌로 제시하고, 서버가 원문에서 확인해 구간으로 저장한다
+    expect(version!.items[0].sources[0].quote).toEqual({ start: 0, end: "첫 입력".length });
   });
 
   it("질문에 번호·라벨과 해소 버전이 붙고 counts가 집계된다", async () => {

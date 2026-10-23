@@ -320,7 +320,7 @@ export async function revertSpec(
           text: item.text,
           position: item.position,
           number: item.number,
-          sources: { create: item.sources.map((s) => ({ inputId: s.inputId })) },
+          sources: { create: item.sources.map((s) => ({ inputId: s.inputId, quoteStart: s.quoteStart, quoteEnd: s.quoteEnd })) },
         },
       });
     }
@@ -334,7 +334,7 @@ export async function revertSpec(
           resolvedByInputId: q.resolvedByInputId,
           position: q.position,
           number: q.number,
-          sources: { create: q.sources.map((s) => ({ inputId: s.inputId })) },
+          sources: { create: q.sources.map((s) => ({ inputId: s.inputId, quoteStart: s.quoteStart, quoteEnd: s.quoteEnd })) },
         },
       });
     }

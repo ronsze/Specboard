@@ -218,17 +218,17 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 6
 
-- [ ] T080 [P] [US6] `tests/unit/quotes.test.ts`에 `locateQuote(content, quote)` 테스트를 작성한다: 정확히 일치, 공백·줄바꿈만 다른 경우 일치(원문 실제 표기 범위 반환), 원문에 없으면 null, 빈 문자열·500자 초과면 null, 여러 번 나오면 첫 번째 위치, 정규식 특수문자 포함 발췌, 반환 범위가 `0 ≤ start < end ≤ 길이`이고 `end − start ≤ 500` (FR-032)
-- [ ] T081 [P] [US6] `tests/integration/spec-quotes.test.ts`에 테스트를 작성한다: 원문에 있는 발췌는 `quoteStart/End`로 저장되고 `getSpec` 출처에 `quote`로 노출, 원문에 없는 발췌는 버려지고 항목·출처 연결은 정상 저장(오류 없음, 작업 DONE), 공백 차이 발췌 인정, 같은 출처를 다시 인용하지 않은 기존 항목의 발췌는 유지, 이전(002) 버전의 출처는 `quote: null`로 오류 없이 표시, 같은 항목의 출처마다 각자의 발췌, 항목이 인용했다고 선언(`sourceInputIds`)하지 않은 입력의 발췌는 무시 (FR-031~FR-033, SC-005)
+- [X] T080 [P] [US6] `tests/unit/quotes.test.ts`에 `locateQuote(content, quote)` 테스트를 작성한다: 정확히 일치, 공백·줄바꿈만 다른 경우 일치(원문 실제 표기 범위 반환), 원문에 없으면 null, 빈 문자열·500자 초과면 null, 여러 번 나오면 첫 번째 위치, 정규식 특수문자 포함 발췌, 반환 범위가 `0 ≤ start < end ≤ 길이`이고 `end − start ≤ 500` (FR-032)
+- [X] T081 [P] [US6] `tests/integration/spec-quotes.test.ts`에 테스트를 작성한다: 원문에 있는 발췌는 `quoteStart/End`로 저장되고 `getSpec` 출처에 `quote`로 노출, 원문에 없는 발췌는 버려지고 항목·출처 연결은 정상 저장(오류 없음, 작업 DONE), 공백 차이 발췌 인정, 같은 출처를 다시 인용하지 않은 기존 항목의 발췌는 유지, 이전(002) 버전의 출처는 `quote: null`로 오류 없이 표시, 같은 항목의 출처마다 각자의 발췌, 항목이 인용했다고 선언(`sourceInputIds`)하지 않은 입력의 발췌는 무시 (FR-031~FR-033, SC-005)
 
 ### Implementation for User Story 6
 
-- [ ] T082 [US6] `src/server/services/quotes.ts`에 `locateQuote`를 구현해 T080을 통과시킨다(공백을 `\s+`로 정규화한 패턴으로 첫 일치를 찾고 원문의 실제 범위를 반환)
-- [ ] T083 [US6] `src/server/ai/spec-writer.ts`와 `src/lib/schemas/spec.ts`의 출력 타입·스키마에 `quotes: [{ inputId, quote }]`(빈 배열 허용)를 항목과 질문에 추가한다. `sourceInputIds` 규칙과 기존 검증은 그대로 유지한다
-- [ ] T084 [US6] `src/server/services/spec-jobs.ts`의 버전 저장이 새 출처의 발췌를 `locateQuote`로 검증해 `quoteStart/End`를 저장하고(실패하면 null), 기존 항목의 같은 출처에는 이전 버전의 발췌를 유지하도록 수정한다. 발췌 때문에 작업이 실패해서는 안 된다
-- [ ] T085 [P] [US6] `src/server/ai/fake-spec-writer.ts`가 입력 본문 앞 문장을 발췌로 제시하도록 하고, 원문에 없는 발췌를 주입하는 옵션(`badQuotes`)을 추가한다
-- [ ] T086 [P] [US6] `src/server/ai/claude-spec-writer.ts`의 프롬프트에 "quote는 원문에서 그대로 복사한 한 문장이고 확실하지 않으면 생략한다, 항목·질문마다 새로 인용하는 출처에만 단다" 지시를 추가하고 구조화 출력 스키마에 `quotes`를 반영한다
-- [ ] T087 [US6] `src/server/services/spec-view.ts`가 출처의 `quote: {start, end} | null`을 내려주고, `src/components/spec/SourcePanel.tsx`가 발췌가 있으면 원문 구간을 `<mark>`로 강조하되 배경색에만 의존하지 않고 인용 부호와 밑줄을 함께 써서 보여주며(없으면 원문만), "원문 전체 보기(IN-n)" 링크로 입력 화면의 해당 입력으로 이동하도록 한다 (FR-033)
+- [X] T082 [US6] `src/server/services/quotes.ts`에 `locateQuote`를 구현해 T080을 통과시킨다(공백을 `\s+`로 정규화한 패턴으로 첫 일치를 찾고 원문의 실제 범위를 반환)
+- [X] T083 [US6] `src/server/ai/spec-writer.ts`와 `src/lib/schemas/spec.ts`의 출력 타입·스키마에 `quotes: [{ inputId, quote }]`(빈 배열 허용)를 항목과 질문에 추가한다. `sourceInputIds` 규칙과 기존 검증은 그대로 유지한다
+- [X] T084 [US6] `src/server/services/spec-jobs.ts`의 버전 저장이 새 출처의 발췌를 `locateQuote`로 검증해 `quoteStart/End`를 저장하고(실패하면 null), 기존 항목의 같은 출처에는 이전 버전의 발췌를 유지하도록 수정한다. 발췌 때문에 작업이 실패해서는 안 된다
+- [X] T085 [P] [US6] `src/server/ai/fake-spec-writer.ts`가 입력 본문 앞 문장을 발췌로 제시하도록 하고, 원문에 없는 발췌를 주입하는 옵션(`badQuotes`)을 추가한다
+- [X] T086 [P] [US6] `src/server/ai/claude-spec-writer.ts`의 프롬프트에 "quote는 원문에서 그대로 복사한 한 문장이고 확실하지 않으면 생략한다, 항목·질문마다 새로 인용하는 출처에만 단다" 지시를 추가하고 구조화 출력 스키마에 `quotes`를 반영한다
+- [X] T087 [US6] `src/server/services/spec-view.ts`가 출처의 `quote: {start, end} | null`을 내려주고, `src/components/spec/SourcePanel.tsx`가 발췌가 있으면 원문 구간을 `<mark>`로 강조하되 배경색에만 의존하지 않고 인용 부호와 밑줄을 함께 써서 보여주며(없으면 원문만), "원문 전체 보기(IN-n)" 링크로 입력 화면의 해당 입력으로 이동하도록 한다 (FR-033)
 - [ ] T088 [P] [US6] `tests/live/spec-writer.live.test.ts`에 실제 Claude의 발췌 점검을 추가한다(키 있을 때만): 제시된 발췌 중 원문에 실제 존재하는 비율을 계산해 출력하고, 존재하지 않는 발췌가 저장되지 않음을 확인한다
 
 ---

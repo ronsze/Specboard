@@ -34,7 +34,11 @@ export type WriterItem = {
   kind: "DECISION" | "REQUIREMENT";
   text: string;
   sourceInputIds: string[];
+  /** 출처마다 원문에서 그대로 복사한 근거 문장 (선택). 서버가 원문에 있는지 확인한다 */
+  quotes?: WriterQuote[];
 };
+
+export type WriterQuote = { inputId: string; quote: string };
 
 export type WriterQuestion = {
   key: string | null;
@@ -42,6 +46,7 @@ export type WriterQuestion = {
   status: "OPEN" | "RESOLVED";
   sourceInputIds: string[];
   resolvedByInputId: string | null;
+  quotes?: WriterQuote[];
 };
 
 export type WriterOutput = { items: WriterItem[]; questions: WriterQuestion[] };
