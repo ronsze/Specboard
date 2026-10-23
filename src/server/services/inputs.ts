@@ -6,6 +6,7 @@ import { allocateInputNumber } from "@/server/services/numbering";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { scheduleSpecUpdate } from "@/server/services/spec-jobs";
 import { scheduleConflictCheck } from "@/server/services/conflict-checks";
+import { loadConflictViews, type ConflictView } from "@/server/services/conflict-view";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { inputCreateSchema, inputRejectSchema, inputStatusSchema, type InputCreate } from "@/lib/schemas/input";
 
@@ -195,8 +196,11 @@ export async function listApprovedInputs(user: Actor, boardId: string, featureId
 export const INPUT_FILTERS = ["all", "mine-pending", "reflect-pending", "rejected"] as const;
 export type InputFilter = (typeof INPUT_FILTERS)[number];
 
+/** 관리자 응답 전용: 충돌 검사 정보가 붙는다. 다른 역할의 응답 객체에는 conflict 키 자체가 없다. */
+export type AdminInputDto = InputDto & { conflict: ConflictView | null };
+
 export type InputView = {
-  inputs: InputDto[];
+  inputs: (InputDto | AdminInputDto)[];
   counts: { all: number; minePending: number; reflectPending: number; rejected: number };
   nextCursor: string | null;
 };
@@ -246,8 +250,12 @@ export async function listInputsView(
 
   const page = rows.slice(0, limit);
   const ctx = await dtoContext(user.id, page);
+  const conflicts =
+    role === "ADMIN"
+      ? await loadConflictViews(page.map((i) => ({ id: i.id, featureId: i.featureId, status: i.status })))
+      : null;
   return {
-    inputs: page.map((i) => toDto(i, ctx)),
+    inputs: page.map((i) => (conflicts ? { ...toDto(i, ctx), conflict: conflicts.get(i.id) ?? null } : toDto(i, ctx))),
     counts: { all, minePending, reflectPending, rejected },
     nextCursor: rows.length > limit ? page[page.length - 1].id : null,
   };

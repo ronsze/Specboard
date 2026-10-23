@@ -1,11 +1,13 @@
 import Link from "next/link";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { InputCard } from "@/components/inputs/InputCard";
 import { InputFilters } from "@/components/inputs/InputFilters";
 import { SubmitInputForm } from "@/components/inputs/SubmitInputForm";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { pageContext } from "@/server/auth/page-context";
-import { INPUT_FILTERS, listInputsView, type InputFilter } from "@/server/services/inputs";
+import { kickConflictChecks } from "@/server/services/conflict-checks";
+import { INPUT_FILTERS, listInputsView, type AdminInputDto, type InputFilter } from "@/server/services/inputs";
 
 export const metadata = { title: "입력" };
 
@@ -24,6 +26,10 @@ export default async function InputsPage({
   const filter = (INPUT_FILTERS as readonly string[]).includes(q.filter ?? "") ? (q.filter as InputFilter) : "all";
   const limit = Math.min(Math.max(Number(q.limit) || STEP, STEP), 100);
   const view = await listInputsView(user, boardId, featureId, { filter, limit });
+  // 충돌 검사 정보는 관리자 응답에만 있다 (비관리자 응답에는 conflict 키가 없다)
+  const conflictOf = (i: (typeof view.inputs)[number]) => ("conflict" in i ? (i as AdminInputDto).conflict : undefined);
+  if (role === "ADMIN") await kickConflictChecks(boardId);
+  const checking = view.inputs.some((i) => conflictOf(i)?.state === "CHECKING");
 
   const base = `/boards/${boardId}/features/${featureId}/inputs`;
   const total = { all: view.counts.all, "mine-pending": view.counts.minePending, "reflect-pending": view.counts.reflectPending, rejected: view.counts.rejected }[filter];
@@ -32,6 +38,7 @@ export default async function InputsPage({
 
   return (
     <div className="two-col" style={{ display: "grid", gridTemplateColumns: role === "VIEWER" ? "minmax(0,1fr)" : "340px minmax(0,1fr)", gap: 24, alignItems: "start" }}>
+      <AutoRefresh active={checking} />
       {role !== "VIEWER" && <SubmitInputForm boardId={boardId} featureId={featureId} />}
       <section className="stack" aria-label="입력 목록">
         <div className="row" style={{ justifyContent: "space-between" }}>
@@ -49,7 +56,7 @@ export default async function InputsPage({
             <EmptyState icon="chat" title="조건에 맞는 입력이 없습니다" actions={<ButtonLink href={base} variant="secondary">전체 보기</ButtonLink>} />
           )
         ) : (
-          view.inputs.map((input) => <InputCard key={input.id} input={input} />)
+          view.inputs.map((input) => <InputCard key={input.id} input={input} conflict={conflictOf(input)} />)
         )}
         {remaining > 0 && (
           <p style={{ textAlign: "center" }}>

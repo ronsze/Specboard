@@ -1,8 +1,10 @@
+import { ConflictPanel } from "@/components/conflicts/ConflictPanel";
 import { ExpandableText } from "@/components/inputs/ExpandableText";
 import { InputKindBadge, InputStatusBadge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { formatShort } from "@/lib/format";
 import { inputLabel } from "@/lib/labels";
+import type { ConflictView } from "@/server/services/conflict-view";
 import type { InputDto } from "@/server/services/inputs";
 
 function Reflection({ input }: { input: InputDto }) {
@@ -30,8 +32,13 @@ export function InputCard({
   input,
   actions,
   headerRight,
+  conflict,
+  conflictSlots,
 }: {
   input: InputDto;
+  /** 관리자 화면에서만 전달된다 (비관리자 호출에는 없음) */
+  conflict?: ConflictView | null;
+  conflictSlots?: { renderWarningActions?: (warningId: string) => React.ReactNode; actions?: React.ReactNode };
   actions?: React.ReactNode;
   /** 기본의 반영 상태 표시를 대신할 오른쪽 위 내용 (예: 승인 대기 화면의 feature 링크) */
   headerRight?: React.ReactNode;
@@ -76,6 +83,14 @@ export function InputCard({
             반려 {input.decidedByName} · <span className="mono">{input.decidedAt && formatShort(input.decidedAt)}</span>
           </p>
         </div>
+      )}
+      {conflict && (
+        <ConflictPanel
+          conflict={conflict}
+          content={input.content}
+          renderWarningActions={conflictSlots?.renderWarningActions}
+          actions={conflictSlots?.actions}
+        />
       )}
       {actions}
     </article>

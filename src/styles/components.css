@@ -699,3 +699,46 @@
   outline: 2px solid var(--src);
   outline-offset: 2px;
 }
+
+/* ───────── 충돌 경고 ───────── */
+.conflict-panel {
+  padding: var(--s-3) var(--s-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-button);
+  background: var(--mute-bg);
+}
+.warning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid color-mix(in srgb, var(--wait) 50%, var(--surface));
+  border-left: 4px solid var(--wait);
+  border-radius: var(--r-button);
+  background: var(--wait-bg);
+}
+.warning--finalized {
+  border-color: var(--no);
+  border-left: 6px solid var(--no);
+  background: var(--no-bg);
+}
+.warning--ack {
+  background: var(--surface);
+  border-style: dashed;
+  border-left-width: 4px;
+}
+.warning--ack summary {
+  cursor: pointer;
+}
+.warning__title {
+  color: var(--wait);
+  font-weight: 700;
+}
+.warning__title--finalized {
+  color: var(--no);
+  font-size: var(--fs-body);
+  letter-spacing: -0.01em;
+}
+.warning__item {
+  font-weight: 600;
+}

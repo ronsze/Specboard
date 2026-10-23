@@ -2,8 +2,9 @@ import { db } from "@/server/db/client";
 import { requireRole } from "@/server/authz/authorize";
 import { assertFeatureInBoard } from "@/server/services/feature-access";
 import { toDto, type InputDto } from "@/server/services/inputs";
+import { loadConflictViews, type ConflictView } from "@/server/services/conflict-view";
 
-export type PendingInputDto = InputDto & { projectName: string; featureName: string };
+export type PendingInputDto = InputDto & { projectName: string; featureName: string; conflict: ConflictView | null };
 
 /** 보드 전체의 승인 대기 입력 (관리자 전용). 제출 시각 오름차순, 보드 인덱스로 한 번에 조회한다. */
 export async function listBoardPending(
@@ -18,10 +19,13 @@ export async function listBoardPending(
     orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
     include: { feature: { select: { name: true, project: { select: { name: true } } } } },
   });
+  // 이 함수는 ADMIN 전용이므로 충돌 검사 정보는 항상 포함한다
+  const conflicts = await loadConflictViews(inputs.map((i) => ({ id: i.id, featureId: i.featureId, status: i.status })));
   return inputs.map((i) => ({
     ...toDto(i, { userId: user.id }),
     projectName: i.feature.project.name,
     featureName: i.feature.name,
+    conflict: conflicts.get(i.id) ?? null,
   }));
 }
 
