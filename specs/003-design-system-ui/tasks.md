@@ -172,14 +172,14 @@ description: "디자인 시안 적용 구현 태스크"
 
 ### Tests for User Story 4
 
-- [ ] T062 [P] [US4] `tests/integration/home.test.ts`에 테스트를 작성한다: feature별 `specStatus`(`NONE`, `IDLE`, `UPDATING`, `FAILED`, `FINALIZED`), 최신 버전 번호·날짜, `pendingReflectCount`, 갱신 중일 때 `updatingToVersion`, 관리자 보드에만 `pendingApprovalCount`, 보드마다 다른 역할, 속하지 않은 보드는 나오지 않음, `getSpec`의 상태와 항상 일치, 쿼리 수가 feature 수에 비례하지 않음(Prisma 쿼리 이벤트 카운트로 확인) (FR-021)
-- [ ] T063 [P] [US4] `tests/e2e/home.spec.ts`를 작성한다: 보드 카드의 내 역할 배지, feature 상태 배지, "승인된 입력 없음", 관리자 보드에만 "승인 대기 N"과 멤버 관리 진입점 (시나리오 16)
+- [X] T062 [P] [US4] `tests/integration/home.test.ts`에 테스트를 작성한다: feature별 `specStatus`(`NONE`, `IDLE`, `UPDATING`, `FAILED`, `FINALIZED`), 최신 버전 번호·날짜, `pendingReflectCount`, 갱신 중일 때 `updatingToVersion`, 관리자 보드에만 `pendingApprovalCount`, 보드마다 다른 역할, 속하지 않은 보드는 나오지 않음, `getSpec`의 상태와 항상 일치, 쿼리 수가 feature 수에 비례하지 않음(Prisma 쿼리 이벤트 카운트로 확인) (FR-021)
+- [X] T063 [P] [US4] `tests/e2e/home.spec.ts`를 작성한다: 보드 카드의 내 역할 배지, feature 상태 배지, "승인된 입력 없음", 관리자 보드에만 "승인 대기 N"과 멤버 관리 진입점 (시나리오 16)
 
 ### Implementation for User Story 4
 
-- [ ] T064 [US4] `src/server/services/home.ts`에 `getHome(user)`를 구현한다: 보드·프로젝트·feature를 가져오고 spec, 최신 버전, 활성·실패 작업, 반영 대기 수를 `groupBy`/`IN` 쿼리로 한 번씩만 조회해 조합하며 `deriveSpecStatus`를 재사용한다 — T062를 통과시킨다
-- [ ] T065 [US4] `src/app/api/home/route.ts`에 GET을 계약대로 구현한다
-- [ ] T066 [US4] `src/app/page.tsx`를 시안 8쪽(보드 카드, 프로젝트 구분 행, feature 행: 이름·상태 배지·버전·날짜·반영 대기 수, 갱신 중 "vN → vN+1")으로 다시 만든다
+- [X] T064 [US4] `src/server/services/home.ts`에 `getHome(user)`를 구현한다: 보드·프로젝트·feature를 가져오고 spec, 최신 버전, 활성·실패 작업, 반영 대기 수를 `groupBy`/`IN` 쿼리로 한 번씩만 조회해 조합하며 `deriveSpecStatus`를 재사용한다 — T062를 통과시킨다
+- [X] T065 [US4] `src/app/api/home/route.ts`에 GET을 계약대로 구현한다
+- [X] T066 [US4] `src/app/page.tsx`를 시안 8쪽(보드 카드, 프로젝트 구분 행, feature 행: 이름·상태 배지·버전·날짜·반영 대기 수, 갱신 중 "vN → vN+1")으로 다시 만든다
 
 ---
 
