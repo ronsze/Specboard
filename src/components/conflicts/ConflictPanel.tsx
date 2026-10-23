@@ -70,14 +70,26 @@ export function ConflictPanel({
           입력의 승인·반려에는 영향이 없습니다. (시도 {conflict.failure?.attempts ?? 0}회)
         </p>
       )}
-      {conflict.stale && conflict.currentSpecVersion && (
+      {conflict.stale && conflict.currentSpecVersion && !conflict.processedAs && (
         <p className="small meta" role="status">
-          <Icon name="clock" size={13} /> 검사 이후 spec이 v{conflict.currentSpecVersion}으로 갱신되었습니다. 최신 spec 기준으로 다시 검사할 수 있습니다.
+          <Icon name="clock" size={13} /> 검사 이후 spec이 새 버전(v{conflict.currentSpecVersion})으로 갱신되었습니다. 최신 spec 기준으로 다시 검사할 수 있습니다.
         </p>
       )}
-      {conflict.warnings.map((w) => (
-        <WarningCard key={w.id} warning={w} content={content} actions={renderWarningActions?.(w.id)} />
-      ))}
+      {conflict.processedAs && conflict.warnings.length > 0 ? (
+        // 처리된 입력의 경고는 이력으로 남고 기본은 접혀 있다
+        <details className="stack" style={{ gap: 8 }}>
+          <summary className="small" style={{ cursor: "pointer" }}>
+            경고 {conflict.warnings.length}개 보기 (처리됨 · {conflict.processedAs === "APPROVED" ? "승인됨" : "반려됨"})
+          </summary>
+          {conflict.warnings.map((w) => (
+            <WarningCard key={w.id} warning={w} content={content} />
+          ))}
+        </details>
+      ) : (
+        conflict.warnings.map((w) => (
+          <WarningCard key={w.id} warning={w} content={content} actions={renderWarningActions?.(w.id)} />
+        ))
+      )}
     </section>
   );
 }

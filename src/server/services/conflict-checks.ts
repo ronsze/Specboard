@@ -10,6 +10,9 @@ import {
   type ConflictErrorCode,
 } from "@/server/ai/conflict-detector";
 import { validateConflicts } from "@/server/ai/validate-conflicts";
+import { requireRole } from "@/server/authz/authorize";
+import { ConflictError, NotFoundError } from "@/lib/errors";
+import { loadConflictViews } from "@/server/services/conflict-view";
 
 const LEASE_MS = 5 * 60_000;
 const MAX_WAIT_MS = 30_000;
@@ -233,5 +236,36 @@ export async function drainConflictChecks(
       return;
     }
     await runConflictCheck(check, detector);
+  }
+}
+
+/**
+ * 관리자가 검사를 다시 시도한다 (대기 입력만). 새 검사 기록이 만들어지고 이전 기록은 보존된다.
+ * 최신 결과가 실패이거나, 비교 대상이 생긴 검사 안 함이거나, 이후 spec이 갱신되어 낡은 경우에만 가능하다 (FR-014).
+ */
+export async function retryConflictCheck(
+  user: { id: string },
+  boardId: string,
+  inputId: string,
+): Promise<void> {
+  await requireRole(user.id, boardId, ["ADMIN"]);
+  const input = await db.input.findUnique({ where: { id: inputId }, select: { id: true, boardId: true, featureId: true, status: true } });
+  if (!input || input.boardId !== boardId) throw new NotFoundError("입력을 찾을 수 없습니다.");
+  if (input.status !== "PENDING") {
+    throw new ConflictError("이미 승인 또는 반려된 입력은 다시 검사할 수 없습니다.", { code: "INPUT_PROCESSED" });
+  }
+  const view = (await loadConflictViews([{ id: input.id, featureId: input.featureId, status: input.status }])).get(input.id);
+  if (view?.state === "CHECKING") throw new ConflictError("이미 검사가 진행 중입니다.", { code: "ALREADY_RUNNING" });
+  if (!view || !view.recheckable) {
+    throw new ConflictError("다시 검사할 수 있는 상태가 아닙니다. (최신 spec 기준으로 이미 검사했거나 비교할 항목이 없습니다.)", { code: "NOT_RECHECKABLE" });
+  }
+  const result = await requestConflictCheck(input.id);
+  if (result === "NONE") throw new ConflictError("이미 검사가 진행 중입니다.", { code: "ALREADY_RUNNING" });
+  if (result === "QUEUED") {
+    try {
+      after(() => drainConflictChecks({ inputId: input.id }).catch((e) => console.error("conflict recheck failed", e)));
+    } catch {
+      // 요청 범위 밖
+    }
   }
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AcknowledgeButton, RecheckButton } from "@/components/conflicts/ConflictActions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { InputCard } from "@/components/inputs/InputCard";
 import { InputFilters } from "@/components/inputs/InputFilters";
@@ -56,7 +57,10 @@ export default async function InputsPage({
             <EmptyState icon="chat" title="조건에 맞는 입력이 없습니다" actions={<ButtonLink href={base} variant="secondary">전체 보기</ButtonLink>} />
           )
         ) : (
-          view.inputs.map((input) => <InputCard key={input.id} input={input} conflict={conflictOf(input)} />)
+          view.inputs.map((input) => <InputCard key={input.id} input={input} conflict={conflictOf(input)} conflictSlots={{
+              renderWarningActions: (id) => <AcknowledgeButton boardId={boardId} warningId={id} />,
+              actions: conflictOf(input)?.recheckable ? <RecheckButton boardId={boardId} inputId={input.id} /> : undefined,
+            }} />)
         )}
         {remaining > 0 && (
           <p style={{ textAlign: "center" }}>

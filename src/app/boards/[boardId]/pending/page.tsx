@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { AcknowledgeButton, RecheckButton } from "@/components/conflicts/ConflictActions";
 import { ApprovalActions } from "@/components/inputs/ApprovalActions";
 import { InputCard } from "@/components/inputs/InputCard";
 import { ButtonLink } from "@/components/ui/Button";
@@ -70,6 +71,10 @@ export default async function BoardPendingPage({
               </Link>
             }
             conflict={input.conflict}
+            conflictSlots={{
+              renderWarningActions: (id) => <AcknowledgeButton boardId={boardId} warningId={id} />,
+              actions: input.conflict?.recheckable ? <RecheckButton boardId={boardId} inputId={input.id} /> : undefined,
+            }}
             actions={<ApprovalActions boardId={boardId} inputId={input.id} />}
           />
         ))

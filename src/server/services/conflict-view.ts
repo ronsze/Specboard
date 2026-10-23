@@ -34,6 +34,34 @@ export type ConflictView = {
   processedAs: "APPROVED" | "REJECTED" | null;
 };
 
+type WarningRow = {
+  id: string;
+  itemKey: string;
+  itemKind: "DECISION" | "REQUIREMENT";
+  itemNumber: number;
+  itemText: string;
+  onFinalizedSpec: boolean;
+  reason: string;
+  quoteStart: number | null;
+  quoteEnd: number | null;
+  acknowledgedAt: Date | null;
+  acknowledgedByName: string | null;
+};
+
+export function toWarningView(w: WarningRow): WarningView {
+  return {
+    id: w.id,
+    itemKey: w.itemKey,
+    label: itemLabel(w.itemKind, w.itemNumber),
+    kind: w.itemKind,
+    itemText: w.itemText,
+    onFinalizedSpec: w.onFinalizedSpec,
+    reason: w.reason,
+    quote: w.quoteStart !== null && w.quoteEnd !== null ? { start: w.quoteStart, end: w.quoteEnd } : null,
+    acknowledged: w.acknowledgedAt ? { byName: w.acknowledgedByName ?? "", at: w.acknowledgedAt.toISOString() } : null,
+  };
+}
+
 type InputRef = { id: string; featureId: string; status: "PENDING" | "APPROVED" | "REJECTED" };
 
 /**
@@ -75,17 +103,7 @@ export async function loadConflictViews(
       (check.status === "SKIPPED" && hasItems);
     const warnings: WarningView[] = [...check.warnings]
       .sort((a, b) => Number(b.onFinalizedSpec) - Number(a.onFinalizedSpec) || a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id))
-      .map((w) => ({
-        id: w.id,
-        itemKey: w.itemKey,
-        label: itemLabel(w.itemKind, w.itemNumber),
-        kind: w.itemKind,
-        itemText: w.itemText,
-        onFinalizedSpec: w.onFinalizedSpec,
-        reason: w.reason,
-        quote: w.quoteStart !== null && w.quoteEnd !== null ? { start: w.quoteStart, end: w.quoteEnd } : null,
-        acknowledged: w.acknowledgedAt ? { byName: w.acknowledgedByName ?? "", at: w.acknowledgedAt.toISOString() } : null,
-      }));
+      .map(toWarningView);
     result.set(check.inputId, {
       state,
       skipReason: check.skipReason,

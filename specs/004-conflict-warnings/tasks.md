@@ -111,14 +111,14 @@ description: "충돌 경고 구현 태스크"
 
 ### Tests for User Story 3
 
-- [ ] T036 [P] [US3] `tests/integration/conflict-acknowledge.test.ts`에 테스트를 작성한다: 확인하면 `acknowledgedAt/By/ByName`이 설정되고 입력의 상태·승인 기록은 불변, 이미 확인된 경고를 다시 확인해도 멱등(기록이 바뀌지 않음), `ConflictView`의 `unacknowledgedCount` 감소, 다른 보드의 경고는 404, 멤버·열람자·비멤버는 403 (FR-016, FR-017, FR-020, 시나리오 16, 20)
-- [ ] T037 [P] [US3] `tests/e2e/conflict-acknowledge.spec.ts`를 작성한다: "확인함" 클릭 한 번(총 두 번 이내)으로 경고가 접힌 "확인됨"이 되고 확인자·시각이 보이며 펼치면 이유·발췌가 그대로 보임, 입력은 여전히 대기, 키보드로 조작 가능, 목록 상단의 미확인 경고 수 감소 (SC-007)
+- [X] T036 [P] [US3] `tests/integration/conflict-acknowledge.test.ts`에 테스트를 작성한다: 확인하면 `acknowledgedAt/By/ByName`이 설정되고 입력의 상태·승인 기록은 불변, 이미 확인된 경고를 다시 확인해도 멱등(기록이 바뀌지 않음), `ConflictView`의 `unacknowledgedCount` 감소, 다른 보드의 경고는 404, 멤버·열람자·비멤버는 403 (FR-016, FR-017, FR-020, 시나리오 16, 20)
+- [X] T037 [P] [US3] `tests/e2e/conflict-acknowledge.spec.ts`를 작성한다: "확인함" 클릭 한 번(총 두 번 이내)으로 경고가 접힌 "확인됨"이 되고 확인자·시각이 보이며 펼치면 이유·발췌가 그대로 보임, 입력은 여전히 대기, 키보드로 조작 가능, 목록 상단의 미확인 경고 수 감소 (SC-007)
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] `src/server/services/conflicts.ts`에 `acknowledgeWarning(user, boardId, warningId)`를 구현한다: `requireRole(ADMIN)`, 경고가 이 보드의 입력에 속하는지 확인(아니면 404), `acknowledgedAt IS NULL`일 때만 조건부로 확인자·시각 설정(이미 확인되었으면 기존 기록 그대로 반환), 입력은 건드리지 않는다
-- [ ] T039 [US3] `src/app/api/boards/[boardId]/conflict-warnings/[warningId]/acknowledge/route.ts`에 POST를 계약대로 구현한다
-- [ ] T040 [US3] `src/components/conflicts/ConflictActions.tsx`(client)에 "확인함" 버튼을 만들고 `WarningCard`가 확인됨 상태(접힘, "확인됨 · 이름 · 시각", 펼치면 이유·발췌)를 렌더링하도록 확장한다. 성공 시 `router.refresh()`
+- [X] T038 [US3] `src/server/services/conflicts.ts`에 `acknowledgeWarning(user, boardId, warningId)`를 구현한다: `requireRole(ADMIN)`, 경고가 이 보드의 입력에 속하는지 확인(아니면 404), `acknowledgedAt IS NULL`일 때만 조건부로 확인자·시각 설정(이미 확인되었으면 기존 기록 그대로 반환), 입력은 건드리지 않는다
+- [X] T039 [US3] `src/app/api/boards/[boardId]/conflict-warnings/[warningId]/acknowledge/route.ts`에 POST를 계약대로 구현한다
+- [X] T040 [US3] `src/components/conflicts/ConflictActions.tsx`(client)에 "확인함" 버튼을 만들고 `WarningCard`가 확인됨 상태(접힘, "확인됨 · 이름 · 시각", 펼치면 이유·발췌)를 렌더링하도록 확장한다. 성공 시 `router.refresh()`
 
 ---
 
@@ -130,9 +130,9 @@ description: "충돌 경고 구현 태스크"
 
 **Independent Test**: 경고가 있던 입력을 승인·반려한 뒤 관리자 입력 화면에서 처리됨으로 보이고 멤버 화면에서는 보이지 않는지 확인 (시나리오 17)
 
-- [ ] T041 [P] [US4] `tests/integration/conflict-processed.test.ts`에 테스트를 작성한다: 경고가 있던 입력을 승인하면 `processedAs=APPROVED`, 반려하면 `REJECTED`로 `ConflictView`에 나오고 경고·확인 기록이 보존됨, 처리된 입력에도 관리자 `listInputsView`에는 `conflict`가 있고 멤버·열람자·제출자 응답에는 없음 (FR-018, SC-008, 시나리오 17)
-- [ ] T042 [P] [US4] `tests/e2e/conflict-processed.spec.ts`를 작성한다: 경고가 있던 입력을 승인한 뒤 관리자가 feature 입력 화면에서 "처리됨(승인됨)" 경고를 보고, 반려한 입력은 "처리됨(반려됨)"으로 보며, 같은 입력을 멤버 계정으로 보면 경고·검사 표시가 없음, 필터(전체·반영 대기·반려)를 바꿔도 처리된 입력의 경고가 함께 동작 (시나리오 17, 19)
-- [ ] T043 [US4] `src/components/conflicts/ConflictPanel.tsx`가 `processedAs`가 있을 때 "처리됨(승인됨)"/"처리됨(반려됨)" 배지를 상태 옆에 표시하고, 처리된 입력의 경고는 기본 접힘으로 보여주도록 확장한다 (FR-018)
+- [X] T041 [P] [US4] `tests/integration/conflict-processed.test.ts`에 테스트를 작성한다: 경고가 있던 입력을 승인하면 `processedAs=APPROVED`, 반려하면 `REJECTED`로 `ConflictView`에 나오고 경고·확인 기록이 보존됨, 처리된 입력에도 관리자 `listInputsView`에는 `conflict`가 있고 멤버·열람자·제출자 응답에는 없음 (FR-018, SC-008, 시나리오 17)
+- [X] T042 [P] [US4] `tests/e2e/conflict-processed.spec.ts`를 작성한다: 경고가 있던 입력을 승인한 뒤 관리자가 feature 입력 화면에서 "처리됨(승인됨)" 경고를 보고, 반려한 입력은 "처리됨(반려됨)"으로 보며, 같은 입력을 멤버 계정으로 보면 경고·검사 표시가 없음, 필터(전체·반영 대기·반려)를 바꿔도 처리된 입력의 경고가 함께 동작 (시나리오 17, 19)
+- [X] T043 [US4] `src/components/conflicts/ConflictPanel.tsx`가 `processedAs`가 있을 때 "처리됨(승인됨)"/"처리됨(반려됨)" 배지를 상태 옆에 표시하고, 처리된 입력의 경고는 기본 접힘으로 보여주도록 확장한다 (FR-018)
 
 ---
 
@@ -142,10 +142,10 @@ description: "충돌 경고 구현 태스크"
 
 **Independent Test**: 검사를 실패시킨 뒤 다시 검사해 결과가 바뀌는지 확인 (시나리오 11~13)
 
-- [ ] T045 [P] [US5] `tests/integration/conflict-retry.test.ts`에 테스트를 작성한다: `FAILED`+`PENDING` 입력에서 다시 검사하면 새 `ConflictCheck`가 `QUEUED`로 등록되고 이전 기록(실패)이 보존되며 최신 결과가 새 검사로 바뀜, spec이 없을 때 제출되어 `SKIPPED`인 입력에 spec이 생기면 다시 검사 가능, 검사 뒤 spec이 갱신된(`stale`) `DONE` 입력도 가능하고 새 검사는 최신 버전 기준(`baseVersion` 갱신), 최신 spec 기준으로 성공한 검사·비교 대상이 여전히 없는 `SKIPPED`(`NOT_RECHECKABLE`)·진행 중(`ALREADY_RUNNING`)·승인 또는 반려된 입력(`INPUT_PROCESSED`)은 409와 사유 코드, 이전에 확인했던 항목과 같은 항목의 새 경고는 확인되지 않은 상태로 시작, 멤버·열람자·비멤버 403 (FR-014, FR-015, FR-020, 시나리오 12, 13)
-- [ ] T046 [P] [US5] `tests/e2e/conflict-retry.spec.ts`를 작성한다: 검사 실패 카드에 "검사 실패"와 "다시 검사"가 보이고, 누르면 "검사 중"→결과, 그동안 승인·반려가 가능, 검사 뒤 spec이 갱신된 입력에는 "검사 이후 spec이 vN으로 갱신됨"과 "다시 검사"가 보이고 "vN 기준"이 표시됨, 멤버 화면에는 표시 없음 (시나리오 11, 12, 19, SC-010)
-- [ ] T047 [US5] `src/server/services/conflict-checks.ts`에 `retryConflictCheck(user, boardId, inputId)`를 구현한다: `requireRole(ADMIN)`, 입력이 이 보드 것인지 확인, 입력이 `PENDING`이 아니면 `INPUT_PROCESSED`, 활성 검사가 있으면 `ALREADY_RUNNING`, ConflictView의 `recheckable`이 아니면(실패도 stale도 비교 대상이 생긴 SKIPPED도 아님) `NOT_RECHECKABLE`로 `ConflictError`(코드 포함, 003의 오류 확장 사용), 통과하면 새 검사를 등록(spec 상태를 다시 읽어 비교 대상이 없으면 `SKIPPED`)하고 `after()`로 drain을 시작 (FR-014)
-- [ ] T048 [US5] `src/app/api/boards/[boardId]/inputs/[inputId]/conflict-check/retry/route.ts`에 POST를 계약대로 구현하고 `ConflictActions`에 "다시 검사" 버튼(`recheckable`일 때만, 관리자 보기에만 렌더링)을 추가한다
+- [X] T045 [P] [US5] `tests/integration/conflict-retry.test.ts`에 테스트를 작성한다: `FAILED`+`PENDING` 입력에서 다시 검사하면 새 `ConflictCheck`가 `QUEUED`로 등록되고 이전 기록(실패)이 보존되며 최신 결과가 새 검사로 바뀜, spec이 없을 때 제출되어 `SKIPPED`인 입력에 spec이 생기면 다시 검사 가능, 검사 뒤 spec이 갱신된(`stale`) `DONE` 입력도 가능하고 새 검사는 최신 버전 기준(`baseVersion` 갱신), 최신 spec 기준으로 성공한 검사·비교 대상이 여전히 없는 `SKIPPED`(`NOT_RECHECKABLE`)·진행 중(`ALREADY_RUNNING`)·승인 또는 반려된 입력(`INPUT_PROCESSED`)은 409와 사유 코드, 이전에 확인했던 항목과 같은 항목의 새 경고는 확인되지 않은 상태로 시작, 멤버·열람자·비멤버 403 (FR-014, FR-015, FR-020, 시나리오 12, 13)
+- [X] T046 [P] [US5] `tests/e2e/conflict-retry.spec.ts`를 작성한다: 검사 실패 카드에 "검사 실패"와 "다시 검사"가 보이고, 누르면 "검사 중"→결과, 그동안 승인·반려가 가능, 검사 뒤 spec이 갱신된 입력에는 "검사 이후 spec이 vN으로 갱신됨"과 "다시 검사"가 보이고 "vN 기준"이 표시됨, 멤버 화면에는 표시 없음 (시나리오 11, 12, 19, SC-010)
+- [X] T047 [US5] `src/server/services/conflict-checks.ts`에 `retryConflictCheck(user, boardId, inputId)`를 구현한다: `requireRole(ADMIN)`, 입력이 이 보드 것인지 확인, 입력이 `PENDING`이 아니면 `INPUT_PROCESSED`, 활성 검사가 있으면 `ALREADY_RUNNING`, ConflictView의 `recheckable`이 아니면(실패도 stale도 비교 대상이 생긴 SKIPPED도 아님) `NOT_RECHECKABLE`로 `ConflictError`(코드 포함, 003의 오류 확장 사용), 통과하면 새 검사를 등록(spec 상태를 다시 읽어 비교 대상이 없으면 `SKIPPED`)하고 `after()`로 drain을 시작 (FR-014)
+- [X] T048 [US5] `src/app/api/boards/[boardId]/inputs/[inputId]/conflict-check/retry/route.ts`에 POST를 계약대로 구현하고 `ConflictActions`에 "다시 검사" 버튼(`recheckable`일 때만, 관리자 보기에만 렌더링)을 추가한다
 
 ---
 
